@@ -1,31 +1,33 @@
-# Swarm Evolution CLI
+# Swarm CLI
 
-The Swarm Evolution CLI (`agents`) is a powerful, autonomous, and zero-dependency orchestration toolkit designed to manage intelligent software engineering agents. It provides a structured, sandboxed environment for AI agents to analyze, refactor, test, and release code across large codebases.
-
-Built for scale and safety, the CLI enforces strict worktree isolation, ensuring that agents operate in parallel without colliding with human developers or each other.
+A self-improving, agentic CLI toolkit for orchestrating AI agents in isolated git worktrees.
 
 ---
 
 ## 🚀 Quick Start
 
-The CLI is integrated into the project's package scripts. To see the full list of available commands, run:
+Install globally (or use `npx`):
 
 ```bash
-pnpm agents --help
+npm link        # from the repo root
+# or
+npm install -g swarm-cli
 ```
 
-To create a new agent sandbox and assign it a task:
+Run the dashboard:
 
 ```bash
-pnpm agents new my-feature-branch "Implement the new billing module"
+swarm
 ```
 
-This will:
+This opens an interactive TUI where you can create sandboxes, open agents, list worktrees, and run validations. Commands are also available directly for scripting and power users:
 
-1. Create a new Git worktree.
-2. Check out `my-feature-branch`.
-3. Generate a task file at `.agents/tasks/my-feature-branch.md`.
-4. Prompt you to launch an agent to begin work.
+```bash
+swarm new my-feature "Implement the new billing module"
+swarm list
+swarm open my-feature
+swarm validate
+```
 
 ---
 
@@ -40,7 +42,7 @@ This will:
 
 ## 🛠️ Command Reference
 
-The Swarm CLI is organized into evolutionary "waves" of capabilities, from basic workspace management to enterprise-scale production engineering.
+The Swarm CLI is organized into evolutionary waves of capabilities, from basic workspace management to enterprise-scale production engineering.
 
 ### Core Subcommands
 
@@ -56,9 +58,9 @@ Manage the lifecycle of agent sandboxes.
 - `test-radius <file>` - Calculate the blast radius of a file and run only the impacted specs.
 - `pr <slug>` - Auto-commit changes and generate a GitHub Pull Request based on the completed task file.
 - `screenshot [url]` - Capture a screenshot of the running app using Playwright for visual validation by an LLM.
-- `ui` - Launch the real-time persistent Swarm Terminal UI dashboard.
+- `health` - Run pre-flight environment checks.
 
-### Context & RAG (V3)
+### Context & Analysis
 
 Tools for deep codebase understanding, context compression, and security analysis.
 
@@ -75,7 +77,7 @@ Tools for deep codebase understanding, context compression, and security analysi
 - `context [dir]` - Generate a semantic map of exported symbols for Retrieval-Augmented Generation (RAG).
 - `memory <get|set|list>` - Global memory bank for cross-agent invariant tracking and learned preferences.
 
-### Autonomous Lifecycles (V4)
+### Autonomous Lifecycles
 
 Tools for independent agent collaboration, planning, and self-healing.
 
@@ -90,7 +92,7 @@ Tools for independent agent collaboration, planning, and self-healing.
 - `daemon` - Background watcher that automatically runs `test-radius` when human developers save files.
 - `heal` - Self-healing hotfix generator that triggers automatically on CI branch failures.
 
-### Production Scale (V5)
+### Production Scale
 
 Enterprise-scale orchestration tools for massive refactors and reliability engineering.
 
@@ -123,4 +125,4 @@ Utilities for maintaining a clean Swarm environment.
 
 The Swarm CLI operates under a strict "Show, Don't Tell" philosophy. Agents are required to provide empirical proof (console output) of their success. The CLI defaults to non-destructive actions, but agents have full filesystem access within their isolated worktrees.
 
-When an agent completes a task, human review is typically performed by reading the self-review section of the task file and running `pnpm agents pr <slug>` to merge the verified code back into the main repository.
+When an agent completes a task, human review is typically performed by reading the self-review section of the task file and running `swarm pr <slug>` to merge the verified code back into the main repository.

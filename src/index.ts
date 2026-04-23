@@ -12,6 +12,8 @@ import { existsSync } from 'fs';
 import os from 'os';
 import { basename } from 'path';
 import color from 'picocolors';
+import { print_help } from './modules/Commands/useCases/help.ts';
+import { run_dashboard } from './modules/Commands/useCases/dashboard.ts';
 
 const KNOWN_AGENTS = {
     aider: {
@@ -161,48 +163,15 @@ function note(message: string, title: string) {
     log.message(`${color.cyan('│')} ${color.bold(title)}\n${color.cyan('│')} ${message}`);
 }
 
-function print_help() {
-    intro(color.bgCyan(color.black(' Swarm CLI ')));
-    log.message(`
-  Usage: swarm <command> [args]
-
-  Core Subcommands:
-    init              Setup Swarm in the current repository
-    new <slug>        Create a new isolated sandbox task
-    open <slug>       Reopen an existing sandbox
-    list              List active sandboxes
-    show <slug>       Show detailed metadata for a sandbox
-    task <slug>       Append human feedback to the task file
-    remove <slug>     Forcefully remove a sandbox and its worktree
-    prune             Clean up merged or orphaned sandboxes
-    validate          Run configured linters and typechecks
-    test              Run the test runner
-    test-radius <f>   Run impacted specs for a modified file
-    ui                Launch interactive dashboard
-    health            Run pre-flight environment checks
-
-  Context & Analysis:
-    compress, graph, references, docs, complexity, audit-sec
-    dead-code, format, logs, context, memory, knowledge
-
-  Autonomous Lifecycles:
-    epic, triage, arch, review, chat, repro, find, mock, daemon, heal
-
-  Production Scale:
-    refactor, deps, migrate, fuzz, chaos, visual, telemetry
-    profile, release, screenshot, pr
-
-  Supported Agent Runtimes (Auto-install):
-    aider, cline, swe-agent
-`);
-    outro();
-}
-
 async function main(): Promise<number> {
     const argv = process.argv.slice(2);
-    if (argv.length === 0 || argv[0] === '--help' || argv[0] === '-h') {
+    if (argv[0] === '--help' || argv[0] === '-h') {
         print_help();
         return 0;
+    }
+
+    if (argv.length === 0) {
+        return run_dashboard();
     }
 
     const cmd = argv[0];

@@ -1,6 +1,17 @@
 # {{title}}
 
-{{metadata}}
+## Metadata
+
+- Slug: {{slug}}
+- Agent: {{agent}}
+- Branch: {{branch}}
+- Base: {{baseBranch}}
+- Worktree: {{worktreePath}}
+- Created: {{createdAt}}
+- Status: {{status}}
+- Task file: {{taskFile}}
+- Spec: {{specFile}}
+- Type: {{type}}
 
 ## Objective
 
