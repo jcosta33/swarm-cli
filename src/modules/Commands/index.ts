@@ -23,6 +23,7 @@ register_capability({ name: 'capabilities', version: '1.0.0', type: 'command', d
 register_capability({ name: 'help', version: '1.0.0', type: 'command', description: 'Show command reference', entry_point: './useCases/help.ts' });
 register_capability({ name: 'dashboard', version: '1.0.0', type: 'command', description: 'Launch interactive TUI dashboard', entry_point: './useCases/dashboard.ts' });
 register_capability({ name: 'decompose', version: '1.0.0', type: 'command', description: 'Decompose a task graph into a DAG', entry_point: './useCases/decompose.ts' });
+register_capability({ name: 'logs', version: '1.0.0', type: 'command', description: 'Query telemetry database', entry_point: './useCases/logs.ts' });
 
 export * from './useCases/arch.ts';
 export * from './useCases/audit-sec.ts';

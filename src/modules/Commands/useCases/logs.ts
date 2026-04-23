@@ -1,56 +1,78 @@
 #!/usr/bin/env node
 
-import { readFileSync, existsSync } from 'fs';
-import { join } from 'path';
-import { red, cyan, bold, dim, yellow, parse_args } from '../../Terminal/index.ts';
+import { parse_args, red, green, dim } from '../../Terminal/index.ts';
 import { get_repo_root } from '../../Workspace/index.ts';
+import {
+    prune_events,
+    prune_sessions,
+    query_sessions,
+} from '../../AgentState/services/telemetry.ts';
 
-function run() {
-    let repoRoot;
+function run(): number {
+    let repoRoot: string;
     try {
         repoRoot = get_repo_root();
-    } catch (_e) {
+    } catch {
         console.error(red('Error: Not inside a git repository.'));
-        process.exit(1);
+        return 1;
     }
 
-    const { positional } = parse_args(process.argv.slice(2));
-    const slug = positional[0];
-    
-    if (!slug) {
-        console.log(red('Usage: agents:logs <slug>'));
-        process.exit(1);
+    const { flags } = parse_args(process.argv.slice(2));
+    const asJson = flags.get('json') === true;
+    const agent = flags.get('agent') as string | undefined;
+    const slug = flags.get('slug') as string | undefined;
+    const follow = flags.get('follow') === true;
+    const pruneDaysRaw = flags.get('prune') as string | undefined;
+
+    if (pruneDaysRaw !== undefined) {
+        const days = parseInt(pruneDaysRaw, 10);
+        if (Number.isNaN(days)) {
+            console.error(red('Invalid --prune value. Expected number of days.'));
+            return 1;
+        }
+        const eventsDeleted = prune_events(repoRoot, days);
+        const sessionsDeleted = prune_sessions(repoRoot, days);
+        console.log(green(`Pruned ${String(eventsDeleted)} events and ${String(sessionsDeleted)} sessions older than ${String(days)} days.`));
+        return 0;
     }
 
-    const logFile = join(repoRoot, '.agents', 'logs', `${slug}.log`);
-    
-    if (!existsSync(logFile)) {
-        console.error(yellow(`No log file found for agent "${slug}" at ${logFile}`));
-        console.log(dim(`Logs are only generated if the agent was launched after Swarm V3 update, and not using the 'current' backend.`));
-        process.exit(1);
+    if (follow) {
+        console.log(dim('Follow mode not yet implemented. Use --json for machine-readable output.'));
+        return 0;
     }
 
-    console.log(cyan(`\nDisplaying logs for ${bold(slug)}:`));
-    console.log(dim('--- LOG START ---'));
-    
-    const content = readFileSync(logFile, 'utf8');
-    
-    // If it's too huge, maybe tail it. Let's just output the whole thing for now,
-    // since the human or LLM can use standard truncation or pagers.
-    // We will truncate to last 500 lines to be safe.
-    const lines = content.split('\n');
-    const MAX_LINES = 500;
-    
-    if (lines.length > MAX_LINES) {
-        console.log(yellow(`... (truncated ${String(lines.length - MAX_LINES)} lines) ...`));
-        console.log(lines.slice(-MAX_LINES).join('\n'));
-    } else {
-        console.log(content);
+    const sessions = query_sessions(repoRoot, 50);
+
+    if (sessions.length === 0) {
+        console.log(dim('No sessions found.'));
+        return 0;
     }
-    
-    console.log(dim('--- LOG END ---\n'));
+
+    let filtered = sessions;
+    if (agent) {
+        filtered = filtered.filter((s) => s.agent === agent);
+    }
+    if (slug) {
+        filtered = filtered.filter((s) => s.slug === slug);
+    }
+
+    if (asJson) {
+        console.log(JSON.stringify(filtered, null, 2));
+        return 0;
+    }
+
+    console.log('Recent sessions:\n');
+    for (const session of filtered) {
+        const duration = session.finished_at
+            ? `${String(Math.round((new Date(session.finished_at).getTime() - new Date(session.started_at).getTime()) / 1000))}s`
+            : 'running';
+        console.log(`  ${session.slug.padEnd(20)} ${session.agent.padEnd(10)} ${duration.padEnd(10)} exit:${String(session.exit_code ?? '-')}`);
+    }
+
+    console.log(`\nTotal: ${String(filtered.length)} sessions\n`);
+    return 0;
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {
-    run();
+    process.exitCode = run();
 }
