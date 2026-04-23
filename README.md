@@ -112,6 +112,8 @@ Enterprise-scale orchestration tools for massive refactors and reliability engin
 Utilities for maintaining a clean Swarm environment.
 
 - `ast rename` - Structural rename utility for safely modifying symbols across the project.
+- `lock <claim|release|list>` - Advisory file locking for parallel agent coordination.
+- `merge <branch>` - Merge a branch with structured conflict reporting.
 - `remove <slug>` - Forcefully remove a sandbox and delete its worktree.
 - `prune` - Clean up and remove merged or orphaned sandboxes.
 - `doctor` - Run diagnostic preflight checks on the CLI and workspace.
