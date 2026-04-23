@@ -22,6 +22,7 @@ register_capability({ name: 'merge', version: '1.0.0', type: 'command', descript
 register_capability({ name: 'capabilities', version: '1.0.0', type: 'command', description: 'List registered capabilities', entry_point: './useCases/capabilities.ts' });
 register_capability({ name: 'help', version: '1.0.0', type: 'command', description: 'Show command reference', entry_point: './useCases/help.ts' });
 register_capability({ name: 'dashboard', version: '1.0.0', type: 'command', description: 'Launch interactive TUI dashboard', entry_point: './useCases/dashboard.ts' });
+register_capability({ name: 'decompose', version: '1.0.0', type: 'command', description: 'Decompose a task graph into a DAG', entry_point: './useCases/decompose.ts' });
 
 export * from './useCases/arch.ts';
 export * from './useCases/audit-sec.ts';
