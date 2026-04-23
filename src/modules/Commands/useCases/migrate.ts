@@ -1,10 +1,13 @@
 #!/usr/bin/env node
 
 import { writeFileSync, existsSync, mkdirSync } from 'fs';
-import { join, basename } from 'path';
 import { spawnSync } from 'child_process';
+import { fileURLToPath } from 'url';
+import { dirname, join, basename } from 'path';
 import { red, cyan, dim, green, parse_args } from '../../Terminal/index.ts';
 import { get_repo_root } from '../../Workspace/index.ts';
+
+const newCommandPath = join(dirname(fileURLToPath(import.meta.url)), 'new.ts');
 
 function run() {
     let repoRoot;
@@ -67,7 +70,7 @@ Wait for \`${translatorSlug}\` to finish. Run the test suite against the new ${t
 
     // Spawn Translator
     console.log(cyan(`\nSpawning Translator Agent...`));
-    spawnSync('pnpm', ['agents:new', translatorSlug, '--type', 'feature'], { stdio: 'inherit', cwd: repoRoot });
+    spawnSync(process.execPath, ['--experimental-strip-types', newCommandPath, translatorSlug, '--type', 'feature'], { stdio: 'inherit', cwd: repoRoot });
 
 }
 

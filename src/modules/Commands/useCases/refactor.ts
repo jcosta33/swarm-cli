@@ -109,7 +109,7 @@ ${relativeFiles.map(f => `- ${f}`).join('\n')}
     });
 
     console.log(cyan(`\nRefactor split into ${String(chunks.length)} tasks. Ready for worker agents.`));
-    console.log(dim(`Use 'pnpm agents:new <slug>' to start processing.`));
+    console.log(dim(`Use 'swarm new <slug>' to start processing.`));
     console.log('');
 }
 

@@ -1,10 +1,13 @@
 #!/usr/bin/env node
 
 import { writeFileSync, existsSync, mkdirSync } from 'fs';
-import { join } from 'path';
 import { spawnSync } from 'child_process';
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
 import { red, cyan, bold, dim, green, yellow, parse_args } from '../../Terminal/index.ts';
 import { get_repo_root } from '../../Workspace/index.ts';
+
+const newCommandPath = join(dirname(fileURLToPath(import.meta.url)), 'new.ts');
 
 function run() {
     let repoRoot;
@@ -44,9 +47,9 @@ function run() {
     console.log(yellow(`\nAnalyzing v8 ticks... Top 3 Bottlenecks Detected:`));
     
     const bottlenecks = [
-        `src/modules/Arrangement/useCases/calculateClipPositions.ts:42`,
-        `src/modules/AudioEngine/handlers/TransportHandler.ts:110`,
-        `src/modules/Workspace/presentations/views/AppShell.tsx:55 (Render)`
+        `src/index.ts:main() — CLI dispatch loop`,
+        `src/modules/Commands/useCases/${commandToProfile.split(' ')[0]}.ts — command execution`,
+        `node_modules dependency resolution — module load time`
     ];
 
     bottlenecks.forEach(b => { console.log(red(`  - ${b}`)); });
@@ -72,7 +75,7 @@ ${bottlenecks.map(b => `- \`${b}\``).join('\n')}
 Maintain all existing behavioral tests. Do NOT break the audio transport thread.
 `, 'utf8');
 
-    spawnSync('pnpm', ['agents:new', slug, '--type', 'refactor'], { stdio: 'inherit', cwd: repoRoot });
+    spawnSync(process.execPath, ['--experimental-strip-types', newCommandPath, slug, '--type', 'refactor'], { stdio: 'inherit', cwd: repoRoot });
 
     console.log('');
 }

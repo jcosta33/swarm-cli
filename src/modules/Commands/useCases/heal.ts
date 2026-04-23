@@ -1,8 +1,12 @@
 #!/usr/bin/env node
 
 import { spawnSync } from 'child_process';
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
 import { red, cyan, bold, dim, green, yellow } from '../../Terminal/index.ts';
 import { get_repo_root } from '../../Workspace/index.ts';
+
+const newCommandPath = join(dirname(fileURLToPath(import.meta.url)), 'new.ts');
 
 function run() {
     let repoRoot;
@@ -30,7 +34,7 @@ function run() {
     const slug = `heal-${String(Date.now())}`;
     console.log(yellow(`Spawning emergency hotfix agent: ${bold(slug)}`));
 
-    const res = spawnSync('pnpm', ['agents:new', slug, '--title', '"Emergency Typecheck Fix"', '--type', 'fix'], { 
+    const res = spawnSync(process.execPath, ['--experimental-strip-types', newCommandPath, slug, '--title', 'Emergency Typecheck Fix', '--type', 'fix'], {
         cwd: repoRoot,
         stdio: 'inherit'
     });

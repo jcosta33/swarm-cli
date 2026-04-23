@@ -48,7 +48,9 @@ function run() {
     const matches: { score: number, file: string, snippet: string }[] = [];
 
     files.forEach((file: string) => {
-        const content = readFileSync(file, 'utf8');
+        const fullContent = readFileSync(file, 'utf8');
+        // Cap in-memory content to first 2KB to avoid exhausting memory on large files
+        const content = fullContent.length > 2048 ? fullContent.slice(0, 2048) : fullContent;
         const lowerContent = content.toLowerCase();
 
         let score = 0;

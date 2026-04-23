@@ -4,12 +4,12 @@ import { spawnSync } from 'child_process';
 import { join } from 'path';
 import { readFileSync, existsSync } from 'fs';
 import { red, green, cyan, bold, dim, yellow, parse_args } from '../../Terminal/index.ts';
-import { get_repo_root } from '../../Workspace/index.ts';
+import { get_repo_root, worktree_list } from '../../Workspace/index.ts';
 
 function findWorktreePath(slug: string, repoRoot: string) {
-    const list = spawnSync('git', ['worktree', 'list', '--porcelain'], { cwd: repoRoot, encoding: 'utf8' }).stdout;
-    const worktreeMatch = new RegExp(`^worktree (.+agents-${slug})$`, 'm').exec(list);
-    return worktreeMatch ? worktreeMatch[1] : null;
+    const worktrees = worktree_list(repoRoot);
+    const match = worktrees.find((w) => w.branch === `agent/${slug}`);
+    return match ? match.path : null;
 }
 
 function run() {

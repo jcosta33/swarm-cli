@@ -1,10 +1,13 @@
 #!/usr/bin/env node
 
 import { writeFileSync, existsSync, mkdirSync } from 'fs';
-import { join } from 'path';
 import { spawnSync } from 'child_process';
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
 import { red, cyan, bold, dim, green, parse_args } from '../../Terminal/index.ts';
 import { get_repo_root } from '../../Workspace/index.ts';
+
+const newCommandPath = join(dirname(fileURLToPath(import.meta.url)), 'new.ts');
 
 function run() {
     let repoRoot;
@@ -26,7 +29,7 @@ function run() {
     console.log(cyan(`\nRequesting Peer Review for: ${bold(targetSlug)}...`));
 
     // First check if the branch exists
-    const branchName = `agents/${targetSlug}`;
+    const branchName = `agent/${targetSlug}`;
     const checkBranch = spawnSync('git', ['show-ref', '--verify', '--quiet', `refs/heads/${branchName}`], { cwd: repoRoot });
     if (checkBranch.status !== 0) {
         console.error(red(`Branch ${branchName} does not exist. Cannot review.`));
@@ -65,7 +68,7 @@ Review the changes made in \`${targetSlug}\` and ensure they are flawless.
     writeFileSync(taskPath, template, 'utf8');
 
     // Automatically invoke agents:new
-    const res = spawnSync('pnpm', ['agents:new', reviewSlug, '--base', branchName], { stdio: 'inherit', cwd: repoRoot });
+    const res = spawnSync(process.execPath, ['--experimental-strip-types', newCommandPath, reviewSlug, '--base', branchName], { stdio: 'inherit', cwd: repoRoot });
     
     if (res.status === 0) {
         console.log(green(`\n✓ Reviewer agent launched successfully.`));

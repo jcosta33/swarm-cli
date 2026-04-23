@@ -32,7 +32,7 @@ function run() {
         process.exit(1);
     }
 
-    const ipcDir = join(get_repo_root(), '.agents', 'ipc'); // put it in the host repo
+    const ipcDir = join(repoRoot, '.agents', 'ipc'); // put it in the host repo
     if (!existsSync(ipcDir)) mkdirSync(ipcDir, { recursive: true });
 
     // Consistent filename regardless of who started it
