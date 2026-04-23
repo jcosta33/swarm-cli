@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { parse_args, red } from '../../Terminal/index.ts';
+import { parse_args, red, green, dim } from '../../Terminal/index.ts';
 import { get_repo_root } from '../../Workspace/index.ts';
 import { spawnSync } from 'child_process';
 
@@ -10,23 +10,7 @@ interface MergeResult {
     conflicts?: string[];
 }
 
-function run(): number {
-    let repoRoot: string;
-    try {
-        repoRoot = get_repo_root();
-    } catch {
-        console.error(red('Error: Not inside a git repository.'));
-        return 1;
-    }
-
-    const { positional } = parse_args(process.argv.slice(2));
-    const branch = positional[0];
-
-    if (!branch) {
-        console.error(red('Usage: swarm merge <branch>'));
-        return 1;
-    }
-
+function merge_branch(repoRoot: string, branch: string): MergeResult {
     const result = spawnSync('git', ['merge', '--no-ff', '--no-commit', branch], {
         cwd: repoRoot,
         encoding: 'utf8',
@@ -42,19 +26,21 @@ function run(): number {
     }
 
     if (conflicts.length > 0 || result.status !== 0) {
-        // Abort the merge to leave repo clean
         spawnSync('git', ['merge', '--abort'], { cwd: repoRoot, stdio: 'pipe' });
-
-        const mergeResult: MergeResult = {
-            success: false,
-            branch,
-            conflicts: conflicts.length > 0 ? conflicts : undefined,
-        };
-        console.log(JSON.stringify(mergeResult, null, 2));
-        return 1;
+        return { success: false, branch, conflicts: conflicts.length > 0 ? conflicts : undefined };
     }
 
-    // Commit the merge
+    const diffResult = spawnSync('git', ['diff', '--cached', '--quiet'], {
+        cwd: repoRoot,
+        stdio: 'pipe',
+    });
+
+    if (diffResult.status === 0) {
+        // No changes staged — abort the empty merge
+        spawnSync('git', ['merge', '--abort'], { cwd: repoRoot, stdio: 'pipe' });
+        return { success: true, branch };
+    }
+
     const commitResult = spawnSync('git', ['commit', '-m', `Merge branch '${branch}'`], {
         cwd: repoRoot,
         stdio: 'pipe',
@@ -63,18 +49,80 @@ function run(): number {
 
     if (commitResult.status !== 0) {
         spawnSync('git', ['merge', '--abort'], { cwd: repoRoot, stdio: 'pipe' });
-        const mergeResult: MergeResult = {
-            success: false,
-            branch,
-            conflicts: ['Merge succeeded but commit failed.'],
-        };
-        console.log(JSON.stringify(mergeResult, null, 2));
+        return { success: false, branch, conflicts: ['Merge succeeded but commit failed.'] };
+    }
+
+    return { success: true, branch };
+}
+
+function get_matching_branches(repoRoot: string, pattern: string): string[] {
+    const result = spawnSync('git', ['branch', '--list', pattern], {
+        cwd: repoRoot,
+        encoding: 'utf8',
+        stdio: 'pipe',
+    });
+
+    if (result.status !== 0) {
+        return [];
+    }
+
+    return result.stdout
+        .split('\n')
+        .map((b) => b.trim().replace(/^[+*]\s*/, ''))
+        .filter((b) => b.length > 0);
+}
+
+function run(): number {
+    let repoRoot: string;
+    try {
+        repoRoot = get_repo_root();
+    } catch {
+        console.error(red('Error: Not inside a git repository.'));
         return 1;
     }
 
-    const mergeResult: MergeResult = { success: true, branch };
+    const { flags, positional } = parse_args(process.argv.slice(2));
+    const cascadeRaw = flags.get('cascade');
+    const cascade = cascadeRaw === true || (typeof cascadeRaw === 'string' && cascadeRaw.length > 0);
+
+    if (cascade) {
+        const pattern = typeof cascadeRaw === 'string' && cascadeRaw.length > 0 ? cascadeRaw : positional[0];
+        if (!pattern) {
+            console.error(red('Usage: swarm merge --cascade <branch-pattern>'));
+            return 1;
+        }
+
+        const branches = get_matching_branches(repoRoot, pattern);
+        if (branches.length === 0) {
+            console.log(dim(`No branches matched pattern: ${pattern}`));
+            return 0;
+        }
+
+        console.log(dim(`Cascade merging ${String(branches.length)} branch(es): ${branches.join(', ')}\n`));
+
+        for (const branch of branches) {
+            const mergeResult = merge_branch(repoRoot, branch);
+            if (!mergeResult.success) {
+                console.error(red(`Failed to merge ${branch}`));
+                console.log(JSON.stringify(mergeResult, null, 2));
+                return 1;
+            }
+            console.log(green(`Merged ${branch}`));
+        }
+
+        console.log(green('\nCascade merge complete.'));
+        return 0;
+    }
+
+    const branch = positional[0];
+    if (!branch) {
+        console.error(red('Usage: swarm merge <branch>'));
+        return 1;
+    }
+
+    const mergeResult = merge_branch(repoRoot, branch);
     console.log(JSON.stringify(mergeResult, null, 2));
-    return 0;
+    return mergeResult.success ? 0 : 1;
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {
