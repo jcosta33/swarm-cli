@@ -15,6 +15,7 @@ import color from 'picocolors';
 import { print_help } from './modules/Commands/useCases/help.ts';
 import { run_dashboard } from './modules/Commands/useCases/dashboard.ts';
 
+
 const KNOWN_AGENTS = {
     aider: {
         install: 'pip install aider-chat',

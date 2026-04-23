@@ -15,6 +15,15 @@ const adapters: Record<string, { command: string; build_args: (slug: string, ext
     opencode,
 };
 
+export const adapter_capabilities = [
+    { name: 'claude', version: '1.0.0', type: 'adapter' as const, description: 'Adapter for the Claude CLI', entry_point: './useCases/claude.ts' },
+    { name: 'codex', version: '1.0.0', type: 'adapter' as const, description: 'Adapter for the OpenAI Codex CLI', entry_point: './useCases/codex.ts' },
+    { name: 'droid', version: '1.0.0', type: 'adapter' as const, description: 'Adapter for the Factory Droid CLI', entry_point: './useCases/droid.ts' },
+    { name: 'gemini', version: '1.0.0', type: 'adapter' as const, description: 'Adapter for the Google Gemini CLI', entry_point: './useCases/gemini.ts' },
+    { name: 'kimi', version: '1.0.0', type: 'adapter' as const, description: 'Adapter for the Kimi CLI', entry_point: './useCases/kimi.ts' },
+    { name: 'opencode', version: '1.0.0', type: 'adapter' as const, description: 'Adapter for the OpenCode CLI', entry_point: './useCases/opencode.ts' },
+];
+
 /**
  * Resolve an agent adapter by name.
  * @param {string} name

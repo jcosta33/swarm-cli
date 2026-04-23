@@ -1,9 +1,9 @@
 {
   "agent-comm": {
-    "status": "created",
-    "backend": "auto",
+    "status": "launched",
+    "backend": "terminal",
     "agent": "claude",
-    "lastUpdated": "2026-04-23T18:52:43.127Z"
+    "lastUpdated": "2026-04-23T19:10:18.310Z"
   },
   "task-decomp": {
     "status": "created",
