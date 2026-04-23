@@ -1,6 +1,7 @@
 
 import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from 'fs';
 import { join } from 'path';
+import { lockSync, unlockSync } from 'proper-lockfile';
 
 interface AgentState {
     status?: string;
@@ -53,6 +54,7 @@ export function read_state(repoRoot: string): Record<string, AgentState | undefi
     if (!existsSync(statePath)) {
         return {};
     }
+    lockSync(statePath, { stale: 5000 });
     try {
         const parsed = JSON.parse(readFileSync(statePath, 'utf8')) as unknown;
         return validate_state(parsed);
@@ -60,6 +62,8 @@ export function read_state(repoRoot: string): Record<string, AgentState | undefi
         const e = _e instanceof Error ? _e : new Error(String(_e));
         console.warn(`Warning: could not read state.json: ${e.message}`);
         return {};
+    } finally {
+        unlockSync(statePath);
     }
 }
 
@@ -69,15 +73,20 @@ export function read_state(repoRoot: string): Record<string, AgentState | undefi
  */
 export function write_state(repoRoot: string, slug: string, data: AgentState) {
     const statePath = get_state_file_path(repoRoot);
-    const currentState = read_state(repoRoot);
-    currentState[slug] = {
-        ...(currentState[slug] ?? {}),
-        ...data,
-        lastUpdated: new Date().toISOString(),
-    };
-    const tempPath = `${statePath}.tmp`;
-    writeFileSync(tempPath, JSON.stringify(currentState, null, 2), 'utf8');
-    renameSync(tempPath, statePath);
+    lockSync(statePath, { stale: 5000 });
+    try {
+        const currentState = read_state(repoRoot);
+        currentState[slug] = {
+            ...(currentState[slug] ?? {}),
+            ...data,
+            lastUpdated: new Date().toISOString(),
+        };
+        const tempPath = `${statePath}.tmp`;
+        writeFileSync(tempPath, JSON.stringify(currentState, null, 2), 'utf8');
+        renameSync(tempPath, statePath);
+    } finally {
+        unlockSync(statePath);
+    }
 }
 
 /**
@@ -85,13 +94,18 @@ export function write_state(repoRoot: string, slug: string, data: AgentState) {
  */
 export function remove_state(repoRoot: string, slug: string) {
     const statePath = get_state_file_path(repoRoot);
-    const currentState = read_state(repoRoot);
-    if (currentState[slug] !== undefined) {
-        const { [slug]: _removed, ...rest } = currentState;
-        void _removed;
-        const tempPath = `${statePath}.tmp`;
-        writeFileSync(tempPath, JSON.stringify(rest, null, 2), 'utf8');
-        renameSync(tempPath, statePath);
+    lockSync(statePath, { stale: 5000 });
+    try {
+        const currentState = read_state(repoRoot);
+        if (currentState[slug] !== undefined) {
+            const { [slug]: _removed, ...rest } = currentState;
+            void _removed;
+            const tempPath = `${statePath}.tmp`;
+            writeFileSync(tempPath, JSON.stringify(rest, null, 2), 'utf8');
+            renameSync(tempPath, statePath);
+        }
+    } finally {
+        unlockSync(statePath);
     }
 }
 
