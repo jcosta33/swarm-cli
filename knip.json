@@ -1,0 +1,10 @@
+{
+    "$schema": "https://unpkg.com/knip@5/schema.json",
+    "entry": [
+        "src/index.ts",
+        "src/modules/Commands/useCases/*.ts",
+        "src/modules/Terminal/useCases/ui.ts"
+    ],
+    "project": ["src/**/*.ts"],
+    "ignore": ["src/modules/Commands/index.ts"]
+}
