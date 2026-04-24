@@ -14,24 +14,18 @@ import { basename } from 'path';
 import color from 'picocolors';
 import { print_help } from './modules/Commands/useCases/help.ts';
 import { run_dashboard } from './modules/Commands/useCases/dashboard.ts';
+import { get_adapter } from './modules/Adapters/index.ts';
 
-
-const KNOWN_AGENTS = {
-    aider: {
-        install: 'pip install aider-chat',
-        run: 'aider',
-        desc: 'Interactive command-line pair-programming AI.',
-    },
-    cline: {
-        install: 'npm install -g @cline/cli',
-        run: 'cline',
-        desc: 'Autonomous engineering CLI agent.',
-    },
-    'swe-agent': {
-        install: 'pip install swe-agent',
-        run: 'swe-agent',
-        desc: 'Headless agent for SWE tasks.',
-    },
+const AGENT_INSTALL_INFO: Record<string, { install: string; desc: string }> = {
+    aider: { install: 'pip install aider-chat', desc: 'Interactive command-line pair-programming AI.' },
+    cline: { install: 'npm install -g @cline/cli', desc: 'Autonomous engineering CLI agent.' },
+    'swe-agent': { install: 'pip install swe-agent', desc: 'Headless agent for SWE tasks.' },
+    claude: { install: 'npm install -g @anthropic-ai/claude-cli', desc: 'Anthropic Claude CLI agent.' },
+    codex: { install: 'npm install -g @openai/codex', desc: 'OpenAI Codex CLI agent.' },
+    droid: { install: 'npm install -g @factory/droid-cli', desc: 'Factory Droid CLI agent.' },
+    gemini: { install: 'npm install -g @google/gemini-cli', desc: 'Google Gemini CLI agent.' },
+    kimi: { install: 'npm install -g @moonshot/kimi-cli', desc: 'Moonshot Kimi CLI agent.' },
+    opencode: { install: 'npm install -g opencode', desc: 'OpenCode CLI agent.' },
 };
 
 function get_git_info() {
@@ -96,22 +90,25 @@ function print_agent_banner(agentName: string, args: string[]) {
 }
 
 async function handle_unknown_command(cmd: string): Promise<number> {
-    if (Object.hasOwn(KNOWN_AGENTS, cmd)) {
-        const agent = KNOWN_AGENTS[cmd as keyof typeof KNOWN_AGENTS];
+    const adapter = get_adapter(cmd);
+    const hasInstallInfo = Object.hasOwn(AGENT_INSTALL_INFO, cmd);
+    const installInfo = hasInstallInfo ? AGENT_INSTALL_INFO[cmd] : undefined;
+    const executable = adapter ? adapter.command : hasInstallInfo ? cmd : null;
 
+    if (executable) {
         const isInstalled =
-            spawnSync('which', [agent.run]).status === 0 || spawnSync('where', [agent.run]).status === 0;
+            spawnSync('which', [executable]).status === 0 || spawnSync('where', [executable]).status === 0;
 
-        if (!isInstalled) {
+        if (!isInstalled && hasInstallInfo) {
             intro(color.bgCyan(color.black(' Swarm CLI ')));
             note(
                 color.yellow(`Command '${cmd}' is not a built-in tool, but it matches a known agent CLI.`),
                 'Unrecognized Command'
             );
-            log.warn(`The agent '${cmd}' (${agent.desc}) is not installed on your system.`);
+            log.warn(`The agent '${cmd}' (${installInfo.desc}) is not installed on your system.`);
 
             const shouldInstall = await confirm({
-                message: `Would you like Swarm CLI to install it for you using \`${agent.install}\`?`,
+                message: `Would you like Swarm CLI to install it for you using \`${installInfo.install}\`?`,
                 initialValue: true,
             });
 
@@ -123,27 +120,33 @@ async function handle_unknown_command(cmd: string): Promise<number> {
             if (shouldInstall) {
                 const s = spinner();
                 s.start(`Installing ${cmd}...`);
-                const installParts = agent.install.split(' ');
+                const installParts = installInfo.install.split(' ');
                 const installRes = spawnSync(installParts[0], installParts.slice(1), { shell: false, stdio: 'pipe' });
 
                 if (installRes.status !== 0) {
                     s.stop(`Failed to install ${cmd}.`);
                     log.error(installRes.stderr.toString());
-                    log.message(`Try installing manually: ${color.cyan(agent.install)}`);
+                    log.message(`Try installing manually: ${color.cyan(installInfo.install)}`);
                     return 1;
                 }
                 s.stop(color.green(`Successfully installed ${cmd}!`));
             } else {
-                log.message(`You can install it manually via: ${color.cyan(agent.install)}`);
+                log.message(`You can install it manually via: ${color.cyan(installInfo.install)}`);
                 return 0;
             }
             outro();
+        } else if (!isInstalled) {
+            intro(color.bgCyan(color.black(' Swarm CLI ')));
+            log.error(color.red(`Agent '${cmd}' is not installed on your system.`));
+            log.message(`Install the '${cmd}' CLI manually, then try again.`);
+            outro();
+            return 1;
         }
 
         // Massive, un-missable beautiful header
         print_agent_banner(cmd, process.argv.slice(3));
 
-        spawnSync(agent.run, process.argv.slice(3), { stdio: 'inherit', shell: false });
+        spawnSync(executable, process.argv.slice(3), { stdio: 'inherit', shell: false });
 
         console.log('');
         outro(color.green(`Agent '${cmd}' execution completed.`));
