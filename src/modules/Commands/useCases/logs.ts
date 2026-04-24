@@ -37,7 +37,31 @@ function run(): number {
     }
 
     if (follow) {
-        console.log(dim('Follow mode not yet implemented. Use --json for machine-readable output.'));
+        console.log(dim('Following telemetry stream (Ctrl+C to stop)...\n'));
+        let lastCount = 0;
+        const poll = () => {
+            const latest = query_sessions(repoRoot, 50);
+            let filtered = latest;
+            if (agent) filtered = filtered.filter((s) => s.agent === agent);
+            if (slug) filtered = filtered.filter((s) => s.slug === slug);
+            if (filtered.length > lastCount) {
+                const newSessions = filtered.slice(lastCount);
+                for (const session of newSessions) {
+                    const duration = session.finished_at
+                        ? `${String(Math.round((new Date(session.finished_at).getTime() - new Date(session.started_at).getTime()) / 1000))}s`
+                        : 'running';
+                    console.log(`  ${session.slug.padEnd(20)} ${session.agent.padEnd(10)} ${duration.padEnd(10)} exit:${String(session.exit_code ?? '-')}  ${dim(session.started_at)}`);
+                }
+                lastCount = filtered.length;
+            }
+        };
+        poll();
+        const interval = setInterval(poll, 2000);
+        process.on('SIGINT', () => {
+            clearInterval(interval);
+            console.log('');
+            process.exit(0);
+        });
         return 0;
     }
 
