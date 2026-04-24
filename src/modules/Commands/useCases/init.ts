@@ -10,6 +10,7 @@ import {
 } from '@clack/prompts';
 import { cpSync, existsSync, mkdirSync, writeFileSync } from 'fs';
 import { join } from 'path';
+import { spawnSync } from 'child_process';
 import color from 'picocolors';
 
 export async function cmd_init(repoRoot: string, _argv: string[]): Promise<number> {
@@ -52,6 +53,15 @@ export async function cmd_init(repoRoot: string, _argv: string[]): Promise<numbe
     }
 
     s.stop('Directory structure created.');
+
+    s.start('Enabling git rerere for automatic conflict resolution...');
+    const rerereRes = spawnSync('git', ['config', 'rerere.enabled'], { cwd: repoRoot, encoding: 'utf8' });
+    if (rerereRes.stdout.trim() !== 'true') {
+        spawnSync('git', ['config', 'rerere.enabled', 'true'], { cwd: repoRoot, encoding: 'utf8' });
+        s.stop('Git rerere enabled.');
+    } else {
+        s.stop('Git rerere already enabled.');
+    }
 
     const defaultTest = await text({
         message: 'What is your test command?',
