@@ -60,7 +60,7 @@ function run(): number {
     const targetFile = positional[0];
 
     if (!targetFile) {
-        console.log(red('Usage: agents:test-radius <path/to/modified/file.ts>'));
+        console.log(red('Usage: swarm test-radius <path/to/modified/file.ts>'));
         return 1;
     }
 

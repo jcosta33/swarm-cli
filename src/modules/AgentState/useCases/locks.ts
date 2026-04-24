@@ -1,14 +1,37 @@
-import { existsSync, readFileSync, writeFileSync } from 'fs';
-import { join } from 'path';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs';
+import { dirname, join } from 'path';
+import { lockSync, unlockSync } from 'proper-lockfile';
 
-interface FileLock {
+type FileLock = {
     agent_slug: string;
     files: string[];
     claimed_at: string;
     expires_at: string;
-}
+};
 
 const DEFAULT_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
+const LOCK_OPTS = { stale: 5000 };
+
+function ensure_locks_file(path: string): void {
+    const dir = dirname(path);
+    if (!existsSync(dir)) {
+        mkdirSync(dir, { recursive: true });
+    }
+    if (!existsSync(path)) {
+        writeFileSync(path, '{}', 'utf8');
+    }
+}
+
+function with_locks_mutex<T>(repoRoot: string, fn: () => T): T {
+    const path = get_locks_path(repoRoot);
+    ensure_locks_file(path);
+    lockSync(path, LOCK_OPTS);
+    try {
+        return fn();
+    } finally {
+        unlockSync(path);
+    }
+}
 
 function is_file_lock(value: unknown): value is FileLock {
     if (!value || typeof value !== 'object') return false;
@@ -58,48 +81,54 @@ function is_expired(lock: FileLock): boolean {
 }
 
 export function claim_lock(repoRoot: string, agentSlug: string, files: string[]): { success: boolean; reason?: string } {
-    const locks = read_locks(repoRoot);
+    return with_locks_mutex(repoRoot, () => {
+        const locks = read_locks(repoRoot);
 
-    for (const file of files) {
-        const existing = locks[file];
-        if (existing !== undefined && !is_expired(existing) && existing.agent_slug !== agentSlug) {
-            return {
-                success: false,
-                reason: `File "${file}" is already claimed by ${existing.agent_slug} (expires: ${existing.expires_at}).`,
+        for (const file of files) {
+            const existing = locks[file];
+            if (existing !== undefined && !is_expired(existing) && existing.agent_slug !== agentSlug) {
+                return {
+                    success: false,
+                    reason: `File "${file}" is already claimed by ${existing.agent_slug} (expires: ${existing.expires_at}).`,
+                };
+            }
+        }
+
+        const now = Date.now();
+        const expiresAt = new Date(now + DEFAULT_TTL_MS).toISOString();
+
+        for (const file of files) {
+            locks[file] = {
+                agent_slug: agentSlug,
+                files: [file],
+                claimed_at: new Date(now).toISOString(),
+                expires_at: expiresAt,
             };
         }
-    }
 
-    const now = Date.now();
-    const expiresAt = new Date(now + DEFAULT_TTL_MS).toISOString();
-
-    for (const file of files) {
-        locks[file] = {
-            agent_slug: agentSlug,
-            files: [file],
-            claimed_at: new Date(now).toISOString(),
-            expires_at: expiresAt,
-        };
-    }
-
-    write_locks(repoRoot, locks);
-    return { success: true };
+        write_locks(repoRoot, locks);
+        return { success: true };
+    });
 }
 
 export function release_lock(repoRoot: string, file: string): { success: boolean; reason?: string } {
-    const locks = read_locks(repoRoot);
-    const existing = locks[file];
-    if (existing === undefined) {
-        return { success: false, reason: `File "${file}" is not locked.` };
-    }
+    return with_locks_mutex(repoRoot, () => {
+        const locks = read_locks(repoRoot);
+        const existing = locks[file];
+        if (existing === undefined) {
+            return { success: false, reason: `File "${file}" is not locked.` };
+        }
 
-    const { [file]: _removed, ...rest } = locks;
-    void _removed;
-    write_locks(repoRoot, rest);
-    return { success: true };
+        const { [file]: _removed, ...rest } = locks;
+        void _removed;
+        write_locks(repoRoot, rest);
+        return { success: true };
+    });
 }
 
 export function list_locks(repoRoot: string): FileLock[] {
-    const locks = read_locks(repoRoot);
-    return Object.values(locks).filter((lock): lock is FileLock => lock !== undefined && !is_expired(lock));
+    return with_locks_mutex(repoRoot, () => {
+        const locks = read_locks(repoRoot);
+        return Object.values(locks).filter((lock): lock is FileLock => lock !== undefined && !is_expired(lock));
+    });
 }

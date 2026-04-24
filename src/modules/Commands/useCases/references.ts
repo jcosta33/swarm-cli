@@ -4,7 +4,7 @@ import { spawnSync } from 'child_process';
 import { red, cyan, bold, dim, parse_args } from '../../Terminal/index.ts';
 import { get_repo_root } from '../../Workspace/index.ts';
 
-function run(): number {
+export function run(): number {
     let repoRoot;
     try {
         repoRoot = get_repo_root();
@@ -18,7 +18,7 @@ function run(): number {
     const pathFilter = String(flags.get('path') ?? 'src'); // defaults to src
     
     if (!symbol) {
-        console.log(red('Usage: agents:references <symbol> [--path <dir>]'));
+        console.log(red('Usage: swarm references <symbol> [--path <dir>]'));
         return 1;
     }
 
@@ -26,7 +26,6 @@ function run(): number {
 
     // Use git grep for lightning fast indexed search
     const res = spawnSync('git', ['grep', '-n', symbol, '--', pathFilter], { cwd: repoRoot, encoding: 'utf8' });
-    if (!symbol) { return 0; }
 
     if (res.status !== 0 || !res.stdout) {
         console.log(dim(`  No references found for "${symbol}".`));

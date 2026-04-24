@@ -15,7 +15,7 @@ const hide_cursor = () => process.stdout.write('\x1B[?25l');
 const show_cursor = () => process.stdout.write('\x1B[?25h');
 const move_cursor_to_top = () => process.stdout.write('\x1B[H');
 
-function render_dashboard(repoRoot: string) {
+export function render_dashboard(repoRoot: string) {
     const sandboxes = worktree_list(repoRoot);
     const globalState = read_state(repoRoot);
 

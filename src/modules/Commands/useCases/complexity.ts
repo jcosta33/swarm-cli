@@ -5,7 +5,7 @@ import { join } from 'path';
 import { red, cyan, bold, dim, yellow, green, parse_args } from '../../Terminal/index.ts';
 import { get_repo_root } from '../../Workspace/index.ts';
 
-function calculateComplexity(content: string) {
+export function calculateComplexity(content: string) {
     // Naive cyclomatic complexity heuristic
     let score = 1; // base score for the file
     
@@ -44,7 +44,7 @@ function run(): number {
     const targetFile = positional[0];
     
     if (!targetFile) {
-        console.log(red('Usage: agents:complexity <path/to/file.ts>'));
+        console.log(red('Usage: swarm complexity <path/to/file.ts>'));
         return 1;
     }
 

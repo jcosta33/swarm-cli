@@ -4,7 +4,7 @@ import { spawnSync } from 'child_process';
 import { red, cyan, bold, green, parse_args } from '../../Terminal/index.ts';
 import { get_repo_root } from '../../Workspace/index.ts';
 
-function run(): number {
+export function run(): number {
     let repoRoot;
     try {
         repoRoot = get_repo_root();
@@ -17,7 +17,7 @@ function run(): number {
     const targetFile = positional[0];
     
     if (!targetFile) {
-        console.log(red('Usage: agents:format <path/to/file.ts>'));
+        console.log(red('Usage: swarm format <path/to/file.ts>'));
         return 1;
     }
 

@@ -28,7 +28,7 @@ function run(): number {
     }
 
     if (!targetSlug) {
-        console.log(red('Usage: agents:chat <target-slug> [--message "your message"]'));
+        console.log(red('Usage: swarm chat <target-slug> [--message "your message"]'));
         return 1;
     }
 

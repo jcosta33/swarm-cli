@@ -11,7 +11,7 @@ import { get_repo_root } from '../../Workspace/index.ts';
 
 import { rename_symbol } from '../../../utils/ast.ts';
 
-function run(): number {
+export function run(): number {
     let repoRoot: string;
     try {
         repoRoot = get_repo_root();

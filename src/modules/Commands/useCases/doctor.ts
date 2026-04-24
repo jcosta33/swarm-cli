@@ -21,7 +21,7 @@ function check_command(cmd: string, args: string[]): { ok: boolean; version: str
     return { ok: false, version: '' };
 }
 
-function run(): number {
+export function run(): number {
     console.log(cyan('\n🩺 Swarm Doctor\n'));
 
     const results: CheckResult[] = [];

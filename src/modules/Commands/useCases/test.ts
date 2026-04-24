@@ -52,7 +52,7 @@ function run_and_truncate(commandStr: string, args: string[], cwd: string) {
     return success;
 }
 
-function run_test(args: string[]) {
+export function run_test(args: string[]) {
     let repoRoot;
     try {
         repoRoot = get_repo_root();

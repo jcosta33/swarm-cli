@@ -36,14 +36,19 @@ export function validate_state(data: unknown): Record<string, AgentState> {
 }
 
 /**
- * Returns the path to the state file. Creates `.agents` dir if missing.
+ * Returns the path to the state file. Creates `.agents` dir if missing
+ * and seeds an empty state.json so `proper-lockfile` can lock it.
  */
 function get_state_file_path(repoRoot: string) {
     const agentsDir = join(repoRoot, '.agents');
     if (!existsSync(agentsDir)) {
         mkdirSync(agentsDir, { recursive: true });
     }
-    return join(agentsDir, 'state.json');
+    const statePath = join(agentsDir, 'state.json');
+    if (!existsSync(statePath)) {
+        writeFileSync(statePath, '{}', 'utf8');
+    }
+    return statePath;
 }
 
 /**
@@ -67,9 +72,7 @@ function read_state_unlocked(statePath: string): Record<string, AgentState | und
  */
 export function read_state(repoRoot: string): Record<string, AgentState | undefined> {
     const statePath = get_state_file_path(repoRoot);
-    if (!existsSync(statePath)) {
-        return {};
-    }
+    // get_state_file_path now seeds the file so the lock target always exists.
     lockSync(statePath, { stale: 5000 });
     try {
         return read_state_unlocked(statePath);

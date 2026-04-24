@@ -9,7 +9,7 @@ import { get_repo_root } from '../../Workspace/index.ts';
 
 const newCommandPath = join(dirname(fileURLToPath(import.meta.url)), 'new.ts');
 
-function run(): number {
+export function run(): number {
     let repoRoot;
     try {
         repoRoot = get_repo_root();
@@ -23,7 +23,7 @@ function run(): number {
     const targetLang = positional[1] || 'Rust';
     
     if (!targetFile) {
-        console.log(red('Usage: agents:migrate <file> [TargetLanguage]'));
+        console.log(red('Usage: swarm migrate <file> [TargetLanguage]'));
         return 1;
     }
 

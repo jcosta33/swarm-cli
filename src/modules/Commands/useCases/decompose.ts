@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { existsSync, mkdirSync } from 'fs';
+import { existsSync, mkdirSync, readFileSync } from 'fs';
 import { join, resolve } from 'path';
 import { spawn, type ChildProcess } from 'child_process';
 import { parse_args, red, green, dim, cyan, bold } from '../../Terminal/index.ts';
@@ -11,25 +11,51 @@ import { create_or_update_task_file, derive_names } from '../../TaskManagement/i
 import { get_adapter } from '../../Adapters/index.ts';
 import { validate_dag, topological_sort } from '../../TaskManagement/useCases/dag.ts';
 
-interface TaskNode {
+type TaskNode = {
     id: string;
     description: string;
     dependencies: string[];
+};
+
+function is_task_node(value: unknown): value is TaskNode {
+    if (!value || typeof value !== 'object') {
+        return false;
+    }
+    const node = value as Record<string, unknown>;
+    if (typeof node.id !== 'string' || typeof node.description !== 'string') {
+        return false;
+    }
+    if (!Array.isArray(node.dependencies)) {
+        return false;
+    }
+    return node.dependencies.every((d) => typeof d === 'string');
 }
 
-function load_task_graph(path: string): TaskNode[] {
-    const raw: unknown = JSON.parse(readFileSync(path, 'utf8'));
+export function load_task_graph(path: string): TaskNode[] {
+    const text = readFileSync(path, 'utf8');
+    let raw: unknown;
+    try {
+        raw = JSON.parse(text);
+    } catch (e: unknown) {
+        const message = e instanceof Error ? e.message : String(e);
+        throw new Error(`Invalid JSON in task graph: ${message}`);
+    }
+
     if (!raw || typeof raw !== 'object' || Array.isArray(raw)) {
-        throw new Error('Invalid task graph: expected object');
+        throw new Error('Invalid task graph: expected object with a "tasks" array');
     }
     const obj = raw as Record<string, unknown>;
-    if (!obj.tasks || !Array.isArray(obj.tasks)) {
+    if (!Array.isArray(obj.tasks)) {
         throw new Error('Invalid task graph: expected { tasks: [...] }');
     }
+
+    const invalid = obj.tasks.findIndex((t) => !is_task_node(t));
+    if (invalid !== -1) {
+        throw new Error(`Invalid task at index ${String(invalid)}: each task needs { id: string, description: string, dependencies: string[] }`);
+    }
+
     return obj.tasks as TaskNode[];
 }
-
-import { readFileSync } from 'fs';
 
 function spawn_agent(
     repoRoot: string,

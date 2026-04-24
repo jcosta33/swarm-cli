@@ -3,6 +3,7 @@
 import {
     parse_args,
     red,
+    split_command,
 } from '../../Terminal/index.ts';
 import {
     get_repo_root,
@@ -11,7 +12,7 @@ import {
 
 import { spawnSync } from 'child_process';
 
-function run(): number {
+export function run(): number {
     let repoRoot: string;
     try {
         repoRoot = get_repo_root();
@@ -36,10 +37,17 @@ function run(): number {
         return 1;
     }
 
-    const editor = process.env.EDITOR ?? 'code';
-    const res = spawnSync(editor, [match.path], {
+    // Split EDITOR on whitespace so values like "code-insiders --wait" work,
+    // but never invoke a shell — that would let EDITOR=`code; rm -rf` inject commands.
+    const editor = process.env.EDITOR?.trim() ?? 'code';
+    const { program, args } = split_command(editor);
+    if (!program) {
+        console.error(red('No editor configured. Set the EDITOR environment variable.'));
+        return 1;
+    }
+    const res = spawnSync(program, [...args, match.path], {
         stdio: 'inherit',
-        shell: true,
+        shell: false,
     });
 
     if (res.status !== 0) {

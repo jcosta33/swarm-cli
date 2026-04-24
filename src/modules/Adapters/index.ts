@@ -1,18 +1,24 @@
+import { build_args as buildClaudeArgs, command as claudeCommand } from './useCases/claude.ts';
+import { build_args as buildCodexArgs, command as codexCommand } from './useCases/codex.ts';
+import { build_args as buildDroidArgs, command as droidCommand } from './useCases/droid.ts';
+import { build_args as buildGeminiArgs, command as geminiCommand } from './useCases/gemini.ts';
+import { build_args as buildKimiArgs, command as kimiCommand } from './useCases/kimi.ts';
+import { build_args as buildOpencodeArgs, command as opencodeCommand } from './useCases/opencode.ts';
 
-import * as claude from './useCases/claude.ts';
-import * as codex from './useCases/codex.ts';
-import * as droid from './useCases/droid.ts';
-import * as gemini from './useCases/gemini.ts';
-import * as kimi from './useCases/kimi.ts';
-import * as opencode from './useCases/opencode.ts';
+type AdapterBuildArgs = (slug: string, extraArgs?: string[], options?: Record<string, unknown>) => string[];
 
-const adapters: Record<string, { command: string; build_args: (slug: string, extraArgs?: string[], options?: Record<string, unknown>) => string[] }> = {
-    claude,
-    codex,
-    droid,
-    gemini,
-    kimi,
-    opencode,
+type Adapter = {
+    command: string;
+    build_args: AdapterBuildArgs;
+};
+
+const adapters: Record<string, Adapter> = {
+    claude: { command: claudeCommand, build_args: buildClaudeArgs },
+    codex: { command: codexCommand, build_args: buildCodexArgs },
+    droid: { command: droidCommand, build_args: buildDroidArgs },
+    gemini: { command: geminiCommand, build_args: buildGeminiArgs },
+    kimi: { command: kimiCommand, build_args: buildKimiArgs },
+    opencode: { command: opencodeCommand, build_args: buildOpencodeArgs },
 };
 
 export const adapter_capabilities = [
@@ -26,9 +32,7 @@ export const adapter_capabilities = [
 
 /**
  * Resolve an agent adapter by name.
- * @param {string} name
- * @returns {object | undefined}
  */
-export function get_adapter(name: string): (typeof adapters)[string] | undefined {
+export function get_adapter(name: string): Adapter | undefined {
     return adapters[name];
 }

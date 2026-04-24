@@ -5,6 +5,38 @@ import { join, basename } from 'path';
 import { red, cyan, bold, dim, green, parse_args } from '../../Terminal/index.ts';
 import { get_repo_root } from '../../Workspace/index.ts';
 
+export function generateFuzzTemplate(funcName: string, fileName: string): string {
+    return `import { describe, it, expect } from 'vitest';
+import { ${funcName} } from '../${fileName}';
+
+describe('${funcName} Fuzzer', () => {
+    it('handles unexpected nulls', () => {
+        expect(() => ${funcName}(null as any)).not.toThrowError(/cannot read properties of null/i);
+    });
+
+    it('handles undefined', () => {
+        expect(() => ${funcName}(undefined as any)).not.toThrowError(/cannot read properties of undefined/i);
+    });
+
+    it('handles massive arrays/strings', () => {
+        const payload = 'A'.repeat(1000000);
+        expect(() => ${funcName}(payload as any)).not.toThrowError(/maximum call stack size exceeded/i);
+    });
+
+    it('handles cyclic objects', () => {
+        const a: any = {};
+        a.a = a;
+        expect(() => ${funcName}(a)).not.toThrowError(/maximum call stack size exceeded/i);
+    });
+
+    it('handles NaN and Infinity', () => {
+        expect(() => ${funcName}(NaN as any)).not.toThrow();
+        expect(() => ${funcName}(Infinity as any)).not.toThrow();
+    });
+});
+`;
+}
+
 function run(): number {
     let repoRoot;
     try {
@@ -19,7 +51,7 @@ function run(): number {
     const targetFunc = positional[1];
     
     if (!targetFile || !targetFunc) {
-        console.log(red('Usage: agents:fuzz <file> <functionName>'));
+        console.log(red('Usage: swarm fuzz <file> <functionName>'));
         return 1;
     }
 
@@ -41,37 +73,8 @@ function run(): number {
     if (!existsSync(testDir)) mkdirSync(testDir, { recursive: true });
 
     const specFile = join(testDir, `${targetFunc}.fuzz.spec.ts`);
+    const template = generateFuzzTemplate(targetFunc, basename(targetFile, '.ts'));
 
-    const template = `import { describe, it, expect } from 'vitest';
-import { ${targetFunc} } from '../${basename(targetFile, '.ts')}';
-
-describe('${targetFunc} Fuzzer', () => {
-    it('handles unexpected nulls', () => {
-        expect(() => ${targetFunc}(null as any)).not.toThrowError(/cannot read properties of null/i);
-    });
-
-    it('handles undefined', () => {
-        expect(() => ${targetFunc}(undefined as any)).not.toThrowError(/cannot read properties of undefined/i);
-    });
-
-    it('handles massive arrays/strings', () => {
-        const payload = 'A'.repeat(1000000);
-        expect(() => ${targetFunc}(payload as any)).not.toThrowError(/maximum call stack size exceeded/i);
-    });
-
-    it('handles cyclic objects', () => {
-        const a: any = {};
-        a.a = a;
-        expect(() => ${targetFunc}(a)).not.toThrowError(/maximum call stack size exceeded/i);
-    });
-
-    it('handles NaN and Infinity', () => {
-        expect(() => ${targetFunc}(NaN as any)).not.toThrow();
-        expect(() => ${targetFunc}(Infinity as any)).not.toThrow();
-    });
-});
-`;
-    
     writeFileSync(specFile, template, 'utf8');
 
     console.log(green(`✓ Fuzzer suite created: ${specFile.replace(repoRoot + '/', '')}`));

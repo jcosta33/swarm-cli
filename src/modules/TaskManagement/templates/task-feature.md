@@ -62,7 +62,7 @@ Which modules will be touched and what changes in each.
 - Do not switch branches unless explicitly instructed
 - Do not merge, rebase, or push unless explicitly instructed
 - Run `{{cmdInstall}}` to install dependencies
-- Run `pnpm agents:validate` after every batch of changes
+- Run `pnpm deps:validate` after every batch of changes
 - **Proactively research and read related docs.** If context from another spec, research, or bug file is needed, you are empowered to browse `.agents/specs/`, `.agents/research/`, or `.agents/bugs/` on your own to confirm your hypotheses and make informed decisions. Any other codebase docs (`docs/`, `AGENTS.md`, `.agents/skills/`, `.agents/audits/`) are also fair game.
 
 ---
@@ -73,7 +73,7 @@ Which modules will be touched and what changes in each.
 - [ ] Fill in acceptance criteria above
 - [ ] Fill in module plan above
 - [ ] Implement
-- [ ] `pnpm agents:validate` passes
+- [ ] `pnpm deps:validate` passes
 - [ ] Self-review: Verification outputs pasted
 - [ ] Self-review: Correctness answered
 - [ ] Self-review: Architecture answered
@@ -126,7 +126,7 @@ Stop. Act as a senior engineer doing an adversarial review of this implementatio
 ### Verification outputs (paste actual command output — do not paraphrase)
 
 - `git status` →
-- `pnpm agents:validate` (last 2 lines):
+- `pnpm deps:validate` (last 2 lines):
 
 ### Correctness
 
@@ -140,7 +140,7 @@ Stop. Act as a senior engineer doing an adversarial review of this implementatio
 
 ### React and TypeScript conventions
 
-- Did you use `useMemo`, `useCallback`, or `React.memo`? Did you use `&&` for conditional rendering? Did you use `interface` instead of `type`, or `enum` instead of `as const`? Does `pnpm agents:validate` pass cleanly?
+- Did you use `useMemo`, `useCallback`, or `React.memo`? Did you use `&&` for conditional rendering? Did you use `interface` instead of `type`, or `enum` instead of `as const`? Does `pnpm deps:validate` pass cleanly?
   Answer:
 
 ### Primary deliverable and related work

@@ -6,7 +6,7 @@ import { red, green, cyan, bold, dim, parse_args } from '../../Terminal/index.ts
 import { get_repo_root } from '../../Workspace/index.ts';
 import { existsSync, mkdirSync } from 'fs';
 
-function run(): number {
+export function run(): number {
     let repoRoot;
     try {
         repoRoot = get_repo_root();

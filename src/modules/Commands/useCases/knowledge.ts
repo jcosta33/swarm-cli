@@ -7,6 +7,15 @@ import { get_repo_root } from '../../Workspace/index.ts';
 import { existsSync, readFileSync } from 'fs';
 import { join } from 'path';
 
+export function scoreContent(content: string, keywords: string[]): number {
+    const lowerContent = content.toLowerCase();
+    let score = 0;
+    for (const kw of keywords) {
+        if (lowerContent.includes(kw.toLowerCase())) score++;
+    }
+    return score;
+}
+
 function run(): number {
     let repoRoot;
     try {
@@ -21,8 +30,8 @@ function run(): number {
     const query = positional.join(' ');
 
     if (!query) {
-        console.log(red('Usage: agents:knowledge <query>'));
-        console.log(dim('Example: agents:knowledge "audio buffer underrun fix"'));
+        console.log(red('Usage: swarm knowledge <query>'));
+        console.log(dim('Example: swarm knowledge "audio buffer underrun fix"'));
         return 1;
     }
 
@@ -49,14 +58,8 @@ function run(): number {
 
     files.forEach((file: string) => {
         const fullContent = readFileSync(file, 'utf8');
-        // Cap in-memory content to first 2KB to avoid exhausting memory on large files
         const content = fullContent.length > 2048 ? fullContent.slice(0, 2048) : fullContent;
-        const lowerContent = content.toLowerCase();
-
-        let score = 0;
-        keywords.forEach((kw) => {
-            if (lowerContent.includes(kw)) score++;
-        });
+        const score = scoreContent(content, keywords);
 
         if (score > 0) {
             matches.push({ file, score, snippet: content });

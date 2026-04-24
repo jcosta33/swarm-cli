@@ -1,17 +1,26 @@
 {
     "compilerOptions": {
-    "strictNullChecks": true,
         "target": "ES2022",
-        "module": "NodeNext",
-        "moduleResolution": "NodeNext",
-        "esModuleInterop": true,
-        "allowImportingTsExtensions": true,
-        "noEmit": true,
-        "types": ["node"],
+        "lib": ["ES2024", "DOM", "DOM.Iterable"],
+        "types": ["@webgpu/types"],
+        "module": "ESNext",
+        "moduleResolution": "bundler",
         "strict": true,
-        "noImplicitAny": true,
+        "noUnusedLocals": true,
+        "noUnusedParameters": true,
+        "noFallthroughCasesInSwitch": true,
+        "noUncheckedIndexedAccess": true,
+        "exactOptionalPropertyTypes": false,
+        "forceConsistentCasingInFileNames": true,
+        "resolveJsonModule": true,
+        "isolatedModules": true,
+        "esModuleInterop": true,
+        "jsx": "react-jsx",
         "skipLibCheck": true,
-        "forceConsistentCasingInFileNames": true
+        "paths": {
+            "#/*": ["./src/*"]
+        }
     },
-    "include": ["src/**/*", "bin/**/*"]
+    "include": ["src", "vite-env.d.ts"],
+    "exclude": ["dist", "build", "coverage", "storybook-static", "src/**/*.spec.ts", "src/**/*.spec.tsx"]
 }

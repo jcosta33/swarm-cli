@@ -13,7 +13,7 @@ const RISKY_PATTERNS = [
     { regex: /\bSECRET\s*=/g, description: 'Potential hardcoded SECRET detected.' },
 ];
 
-function auditSecurity(content: string) {
+export function auditSecurity(content: string) {
     const lines = content.split('\n');
     const issues = [];
 
@@ -46,7 +46,7 @@ function run(): number {
     const targetFile = positional[0];
     
     if (!targetFile) {
-        console.log(red('Usage: agents:audit-sec <path/to/file.ts>'));
+        console.log(red('Usage: swarm audit-sec <path/to/file.ts>'));
         return 1;
     }
 

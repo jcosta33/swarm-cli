@@ -31,7 +31,7 @@ Be specific. Vague objectives produce vague outcomes.
 - Do not switch branches unless explicitly instructed
 - Do not merge, rebase, or push unless explicitly instructed
 - Run `{{cmdInstall}}` to install modules
-- Run `pnpm agents:validate` after every change
+- Run `pnpm deps:validate` after every change
 - **Proactively research and read related docs.** If context from another spec, research, or bug file is needed, you are empowered to browse `.agents/specs/`, `.agents/research/`, or `.agents/bugs/` on your own to confirm your hypotheses and make informed decisions. Any other codebase docs (`docs/`, `AGENTS.md`, `.agents/skills/`, `.agents/audits/`) are also fair game.
 
 ---
@@ -108,7 +108,9 @@ Stop. Act as a nitpicky senior engineer reviewing your own work as if you didn't
 ### Verification outputs (paste actual command output — do not paraphrase)
 
 - `git status` →
-- `pnpm agents:validate` (last 2 lines):
+- `pnpm deps:validate` (last 2 lines):
+- `pnpm typecheck` (last 2 lines):
+- `pnpm test:run` (last 2 lines):
 
 ### Correctness
 

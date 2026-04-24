@@ -9,7 +9,7 @@ import { get_repo_root } from '../../Workspace/index.ts';
 
 const newCommandPath = join(dirname(fileURLToPath(import.meta.url)), 'new.ts');
 
-function run(): number {
+export function run(): number {
     let repoRoot;
     try {
         repoRoot = get_repo_root();
@@ -22,8 +22,8 @@ function run(): number {
     const commandToProfile = positional.join(' ');
     
     if (!commandToProfile) {
-        console.log(red('Usage: agents:profile <command>'));
-        console.log(dim('Example: agents:profile "pnpm test"'));
+        console.log(red('Usage: swarm profile <command>'));
+        console.log(dim('Example: swarm profile "pnpm test"'));
         return 1;
     }
 

@@ -61,7 +61,7 @@ function run_and_truncate(commandStr: string, cwd: string): boolean | null {
     return success;
 }
 
-function run(): number {
+export function run(): number {
     let repoRoot: string;
     try {
         repoRoot = get_repo_root();

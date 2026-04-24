@@ -12,7 +12,7 @@ function findWorktreePath(slug: string, repoRoot: string) {
     return match ? match.path : null;
 }
 
-function run(): number {
+export function run(): number {
     let repoRoot;
     try {
         repoRoot = get_repo_root();
@@ -25,7 +25,7 @@ function run(): number {
     const slug = positional[0];
     
     if (!slug) {
-        console.log(red('Usage: agents:pr <slug>'));
+        console.log(red('Usage: swarm pr <slug> [--push] [--draft] [--base <branch>]'));
         return 1;
     }
 
@@ -58,11 +58,48 @@ function run(): number {
 
     if (commitRes.status === 0) {
         console.log(green(`\n✓ Changes committed successfully.`));
-        console.log(yellow(`To open the PR, push your branch: git push origin agents-${slug}`));
     } else {
         console.log(yellow(`\n✗ Git commit failed (maybe no changes to commit?).`));
     }
-    return 0;
+
+    const branch = `agent/${slug}`;
+    const { flags } = parse_args(process.argv.slice(2));
+    const shouldPush = flags.get('push') === true;
+    const draft = flags.get('draft') === true;
+    const base = (flags.get('base') as string | undefined) ?? 'main';
+
+    if (!shouldPush) {
+        console.log(yellow(`To open a PR, push your branch and run \`gh pr create\`:`));
+        console.log(dim(`  git push -u origin ${branch}`));
+        console.log(dim(`  gh pr create --base ${base} --title "${objective}" --body-file ${taskFile}`));
+        console.log(dim(`Or rerun with --push to do this automatically.`));
+        return 0;
+    }
+
+    console.log(cyan(`\nPushing ${branch}...`));
+    const pushRes = spawnSync('git', ['push', '-u', 'origin', branch], { cwd: worktreeAbs, stdio: 'inherit' });
+    if (pushRes.status !== 0) {
+        console.error(red('git push failed.'));
+        return 1;
+    }
+
+    const ghCheck = spawnSync('gh', ['--version'], { stdio: 'pipe' });
+    if (ghCheck.status !== 0) {
+        console.log(yellow('`gh` CLI not found — branch pushed but no PR created.'));
+        return 0;
+    }
+
+    const ghArgs = ['pr', 'create', '--base', base, '--title', objective, '--body-file', taskFile];
+    if (draft) {
+        ghArgs.push('--draft');
+    }
+    const ghRes = spawnSync('gh', ghArgs, { cwd: worktreeAbs, stdio: 'inherit' });
+    if (ghRes.status === 0) {
+        console.log(green(`\n✓ PR opened.`));
+        return 0;
+    }
+    console.error(red('gh pr create failed.'));
+    return 1;
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {

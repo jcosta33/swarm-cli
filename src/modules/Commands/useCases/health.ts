@@ -22,7 +22,7 @@ function check_command(cmd: string, args: string[]): CommandCheck {
     };
 }
 
-function run(): number {
+export function run(): number {
     console.log(cyan('\n🩺 Swarm Health Check\n'));
 
     let repoRoot: string;

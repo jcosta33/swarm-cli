@@ -5,7 +5,7 @@ import { join } from 'path';
 import { red, cyan, bold, dim, yellow, parse_args } from '../../Terminal/index.ts';
 import { get_repo_root } from '../../Workspace/index.ts';
 
-function extractImports(content: string) {
+export function extractImports(content: string) {
     const lines = content.split('\n');
     const dependencies = [];
 
@@ -36,7 +36,7 @@ function run(): number {
     const targetFile = positional[0];
     
     if (!targetFile) {
-        console.log(red('Usage: agents:graph <path/to/file.ts>'));
+        console.log(red('Usage: swarm graph <path/to/file.ts>'));
         return 1;
     }
 

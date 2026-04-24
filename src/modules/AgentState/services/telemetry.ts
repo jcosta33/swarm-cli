@@ -2,7 +2,7 @@ import Database from 'better-sqlite3';
 import { existsSync, mkdirSync } from 'fs';
 import { join } from 'path';
 
-interface SessionRecord {
+type SessionRecord = {
     id: string;
     slug: string;
     agent: string;
@@ -10,16 +10,16 @@ interface SessionRecord {
     started_at: string;
     finished_at: string | null;
     exit_code: number | null;
-}
+};
 
-interface EventRecord {
+type EventRecord = {
     session_id: string;
     timestamp: string;
     level: string;
     event_type: string;
     message: string;
     metadata: string | null;
-}
+};
 
 function get_db_path(repoRoot: string): string {
     const logsDir = join(repoRoot, '.agents', 'logs');
@@ -58,11 +58,43 @@ function init_schema(db: Database.Database): void {
     `);
 }
 
+// Per-process singleton: better-sqlite3 is synchronous and we don't want to
+// open/close a fresh connection (and re-run schema init) on every call. We
+// keep one connection per repoRoot and close them all on process exit.
+const dbCache = new Map<string, Database.Database>();
+let exitHookRegistered = false;
+
+function close_all_dbs(): void {
+    for (const db of dbCache.values()) {
+        try {
+            db.close();
+        } catch {
+            // best-effort cleanup
+        }
+    }
+    dbCache.clear();
+}
+
 function get_db(repoRoot: string): Database.Database {
     const dbPath = get_db_path(repoRoot);
+    const cached = dbCache.get(dbPath);
+    if (cached) {
+        return cached;
+    }
     const db = new Database(dbPath);
     init_schema(db);
+    dbCache.set(dbPath, db);
+
+    if (!exitHookRegistered) {
+        process.once('exit', close_all_dbs);
+        exitHookRegistered = true;
+    }
     return db;
+}
+
+/** Exported for tests that need to drop cached connections between cases. */
+export function _reset_telemetry_for_tests(): void {
+    close_all_dbs();
 }
 
 export function record_session(repoRoot: string, session: SessionRecord): void {
@@ -75,7 +107,6 @@ export function record_session(repoRoot: string, session: SessionRecord): void {
             exit_code = excluded.exit_code
     `);
     stmt.run(session.id, session.slug, session.agent, session.model, session.started_at, session.finished_at, session.exit_code);
-    db.close();
 }
 
 export function record_event(repoRoot: string, event: EventRecord): void {
@@ -85,7 +116,6 @@ export function record_event(repoRoot: string, event: EventRecord): void {
         VALUES (?, ?, ?, ?, ?, ?)
     `);
     stmt.run(event.session_id, event.timestamp, event.level, event.event_type, event.message, event.metadata);
-    db.close();
 }
 
 export function query_sessions(repoRoot: string, limit = 50): SessionRecord[] {
@@ -96,9 +126,7 @@ export function query_sessions(repoRoot: string, limit = 50): SessionRecord[] {
         ORDER BY started_at DESC
         LIMIT ?
     `);
-    const rows = stmt.all(limit) as SessionRecord[];
-    db.close();
-    return rows;
+    return stmt.all(limit) as SessionRecord[];
 }
 
 export function query_events(repoRoot: string, sessionId?: string, limit = 50): EventRecord[] {
@@ -111,9 +139,7 @@ export function query_events(repoRoot: string, sessionId?: string, limit = 50): 
             ORDER BY timestamp DESC
             LIMIT ?
         `);
-        const rows = stmt.all(sessionId, limit) as EventRecord[];
-        db.close();
-        return rows;
+        return stmt.all(sessionId, limit) as EventRecord[];
     }
     const stmt = db.prepare(`
         SELECT session_id, timestamp, level, event_type, message, metadata
@@ -121,9 +147,7 @@ export function query_events(repoRoot: string, sessionId?: string, limit = 50): 
         ORDER BY timestamp DESC
         LIMIT ?
     `);
-    const rows = stmt.all(limit) as EventRecord[];
-    db.close();
-    return rows;
+    return stmt.all(limit) as EventRecord[];
 }
 
 export function prune_events(repoRoot: string, olderThanDays: number): number {
@@ -131,7 +155,6 @@ export function prune_events(repoRoot: string, olderThanDays: number): number {
     const cutoff = new Date(Date.now() - olderThanDays * 24 * 60 * 60 * 1000).toISOString();
     const stmt = db.prepare(`DELETE FROM events WHERE timestamp < ?`);
     const result = stmt.run(cutoff);
-    db.close();
     return result.changes;
 }
 
@@ -140,6 +163,5 @@ export function prune_sessions(repoRoot: string, olderThanDays: number): number 
     const cutoff = new Date(Date.now() - olderThanDays * 24 * 60 * 60 * 1000).toISOString();
     const stmt = db.prepare(`DELETE FROM sessions WHERE started_at < ?`);
     const result = stmt.run(cutoff);
-    db.close();
     return result.changes;
 }

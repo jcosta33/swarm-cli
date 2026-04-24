@@ -5,6 +5,35 @@ import { join } from 'path';
 import { red, cyan, bold, dim, green, yellow } from '../../Terminal/index.ts';
 import { get_repo_root } from '../../Workspace/index.ts';
 
+interface AgentInfo { status?: string; backend?: string; agent?: string; }
+
+function isAgentInfo(value: unknown): value is AgentInfo {
+    return typeof value === 'object' && value !== null;
+}
+
+export interface Metrics {
+    activeCount: number;
+    completedCount: number;
+    crashedCount: number;
+}
+
+export function aggregateMetrics(state: Record<string, unknown>): Metrics {
+    let activeCount = 0;
+    let completedCount = 0;
+    let crashedCount = 0;
+
+    const slugs = Object.keys(state);
+    for (const slug of slugs) {
+        const info = state[slug];
+        if (!isAgentInfo(info)) continue;
+        if (info.status === 'running') activeCount++;
+        else if (info.status === 'crashed') crashedCount++;
+        else completedCount++;
+    }
+
+    return { activeCount, completedCount, crashedCount };
+}
+
 function run(): number {
     let repoRoot;
     try {
@@ -30,28 +59,13 @@ function run(): number {
         return 0;
     }
 
-    interface AgentInfo { status?: string; backend?: string; agent?: string; }
-    function isAgentInfo(value: unknown): value is AgentInfo {
-        return typeof value === 'object' && value !== null;
-    }
-
-    let activeCount = 0;
-    let completedCount = 0;
-    let crashedCount = 0;
-
-    slugs.forEach(slug => {
-        const info = state[slug];
-        if (!isAgentInfo(info)) return;
-        if (info.status === 'running') activeCount++;
-        else if (info.status === 'crashed') crashedCount++;
-        else completedCount++;
-    });
+    const metrics = aggregateMetrics(state);
 
     console.log(bold(`Global Metrics:`));
     console.log(`  Total Agents Spawned: ${String(slugs.length)}`);
-    console.log(`  Active Agents:        ${green(activeCount.toString())}`);
-    console.log(`  Completed Tasks:      ${cyan(completedCount.toString())}`);
-    console.log(`  Crashed/Failed:       ${crashedCount > 0 ? red(crashedCount.toString()) : green('0')}`);
+    console.log(`  Active Agents:        ${green(metrics.activeCount.toString())}`);
+    console.log(`  Completed Tasks:      ${cyan(metrics.completedCount.toString())}`);
+    console.log(`  Crashed/Failed:       ${metrics.crashedCount > 0 ? red(metrics.crashedCount.toString()) : green('0')}`);
     
     console.log(`\n${bold(`Recent Execution Logs:`)}`);
     

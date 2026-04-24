@@ -6,6 +6,21 @@ import { get_repo_root } from '../../Workspace/index.ts';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs';
 import { basename, join } from 'path';
 
+export function parseEpicTasks(content: string): string[] {
+    const lines = content.split('\n');
+    const tasks: string[] = [];
+
+    for (const line of lines) {
+        const trimmed = line.trim();
+        if (trimmed.startsWith('- ') || trimmed.startsWith('* ')) {
+            const taskName = trimmed.slice(2).trim();
+            if (taskName) tasks.push(taskName);
+        }
+    }
+
+    return tasks;
+}
+
 function run(): number {
     let repoRoot;
     try {
@@ -20,7 +35,7 @@ function run(): number {
     const epicFile = positional[0];
 
     if (!epicFile) {
-        console.log(red('Usage: agents:epic <path/to/epic.md>'));
+        console.log(red('Usage: swarm epic <path/to/epic.md>'));
         console.log(dim('The markdown file should contain a markdown list of tasks.'));
         return 1;
     }
@@ -32,17 +47,8 @@ function run(): number {
     }
 
     const content = readFileSync(fullPath, 'utf8');
-    const lines = content.split('\n');
-    const tasks = [];
     const epicSlug = basename(epicFile, '.md');
-
-    for (const line of lines) {
-        const trimmed = line.trim();
-        if (trimmed.startsWith('- ') || trimmed.startsWith('* ')) {
-            const taskName = trimmed.slice(2).trim();
-            if (taskName) tasks.push(taskName);
-        }
-    }
+    const tasks = parseEpicTasks(content);
 
     console.log(cyan(`\nDecomposing Epic: ${bold(epicSlug)}...`));
 
@@ -76,7 +82,7 @@ ${task} (Derived from Epic ${epicSlug})
 ## Progress checklist
 
 - [ ] Complete implementation
-- [ ] Pass agents:validate
+- [ ] Pass \`swarm validate\`
 
 ## Next steps
 

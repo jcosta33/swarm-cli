@@ -11,8 +11,18 @@ const METADATA_START = '## Metadata';
  * @param {object} data
  * @returns {string}
  */
-function render_template(templateContent: string, data: Record<string, string>) {
-    const cmds = (data.commands ? JSON.parse(data.commands) : {}) as Record<string, string>;
+export function render_template(templateContent: string, data: Record<string, string>) {
+    let cmds: Record<string, string> = {};
+    if (data.commands) {
+        try {
+            const parsed = JSON.parse(data.commands) as unknown;
+            if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+                cmds = parsed as Record<string, string>;
+            }
+        } catch {
+            // Fall back to defaults if commands JSON is malformed.
+        }
+    }
     return templateContent
         .replace(/\{\{title\}\}/g, data.title || "")
         .replace(/\{\{slug\}\}/g, data.slug || "")
@@ -36,7 +46,7 @@ function render_template(templateContent: string, data: Record<string, string>) 
  * @param {object} data
  * @returns {string}
  */
-function build_metadata_block(data: Record<string, string>) {
+export function build_metadata_block(data: Record<string, string>) {
     return [
         `## Metadata`,
         `- Slug: ${data.slug}`,

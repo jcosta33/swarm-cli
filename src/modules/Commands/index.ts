@@ -7,58 +7,77 @@ for (const cap of adapter_capabilities) {
     register_capability(cap);
 }
 
-// Core commands
-register_capability({ name: 'new', version: '1.0.0', type: 'command', description: 'Create a new isolated sandbox task', entry_point: './useCases/new.ts' });
-register_capability({ name: 'open', version: '1.0.0', type: 'command', description: 'Reopen an existing sandbox', entry_point: './useCases/open.ts' });
-register_capability({ name: 'list', version: '1.0.0', type: 'command', description: 'List active sandboxes', entry_point: './useCases/list.ts' });
-register_capability({ name: 'show', version: '1.0.0', type: 'command', description: 'Show detailed metadata for a sandbox', entry_point: './useCases/show.ts' });
-register_capability({ name: 'remove', version: '1.0.0', type: 'command', description: 'Forcefully remove a sandbox', entry_point: './useCases/remove.ts' });
-register_capability({ name: 'prune', version: '1.0.0', type: 'command', description: 'Clean up merged or orphaned sandboxes', entry_point: './useCases/prune.ts' });
-register_capability({ name: 'validate', version: '1.0.0', type: 'command', description: 'Run configured linters and typechecks', entry_point: './useCases/validate.ts' });
-register_capability({ name: 'test', version: '1.0.0', type: 'command', description: 'Run the test runner', entry_point: './useCases/test.ts' });
-register_capability({ name: 'init', version: '1.0.0', type: 'command', description: 'Setup Swarm in the current repository', entry_point: './useCases/init.ts' });
-register_capability({ name: 'lock', version: '1.0.0', type: 'command', description: 'Advisory file locking for parallel agents', entry_point: './useCases/lock.ts' });
-register_capability({ name: 'merge', version: '1.0.0', type: 'command', description: 'Merge a branch with conflict detection', entry_point: './useCases/merge.ts' });
-register_capability({ name: 'capabilities', version: '1.0.0', type: 'command', description: 'List registered capabilities', entry_point: './useCases/capabilities.ts' });
-register_capability({ name: 'help', version: '1.0.0', type: 'command', description: 'Show command reference', entry_point: './useCases/help.ts' });
-register_capability({ name: 'dashboard', version: '1.0.0', type: 'command', description: 'Launch interactive TUI dashboard', entry_point: './useCases/dashboard.ts' });
-register_capability({ name: 'decompose', version: '1.0.0', type: 'command', description: 'Decompose a task graph into a DAG', entry_point: './useCases/decompose.ts' });
-register_capability({ name: 'logs', version: '1.0.0', type: 'command', description: 'Query telemetry database', entry_point: './useCases/logs.ts' });
+// Commands are dispatched by file path (see src/index.ts), so the registry just
+// publishes their names/descriptions for `swarm capabilities` and the dashboard.
+// Do NOT `export *` from useCase files here — every useCase exports a `run`
+// function and the resulting collisions break typecheck.
+const COMMAND_CATALOG = [
+    { name: 'new', description: 'Create a new isolated sandbox task' },
+    { name: 'open', description: 'Reopen an existing sandbox' },
+    { name: 'list', description: 'List active sandboxes' },
+    { name: 'show', description: 'Show detailed metadata for a sandbox' },
+    { name: 'status', description: 'Runtime status: state, telemetry, dirtiness' },
+    { name: 'remove', description: 'Forcefully remove a sandbox' },
+    { name: 'prune', description: 'Clean up merged or orphaned sandboxes' },
+    { name: 'validate', description: 'Run configured linters and typechecks' },
+    { name: 'test', description: 'Run the test runner' },
+    { name: 'test-radius', description: 'Run only the specs impacted by a file' },
+    { name: 'init', description: 'Setup Swarm in the current repository' },
+    { name: 'lock', description: 'Advisory file locking for parallel agents' },
+    { name: 'merge', description: 'Merge a branch with conflict detection' },
+    { name: 'capabilities', description: 'List registered capabilities' },
+    { name: 'help', description: 'Show command reference' },
+    { name: 'dashboard', description: 'Launch interactive TUI dashboard' },
+    { name: 'decompose', description: 'Decompose a task graph into a DAG' },
+    { name: 'logs', description: 'Query the telemetry database' },
+    { name: 'arch', description: 'Lint cross-module boundary invariants' },
+    { name: 'audit-sec', description: 'Scan for dangerous patterns and secrets' },
+    { name: 'ast-rename', description: 'Structural rename of a symbol' },
+    { name: 'chaos', description: 'Toggle latency/failure injection' },
+    { name: 'chat', description: 'Append-only IPC log between agents' },
+    { name: 'complexity', description: 'Cyclomatic complexity heuristic' },
+    { name: 'compress', description: 'Skeletonize a TS file' },
+    { name: 'context', description: 'Generate semantic export map for RAG' },
+    { name: 'daemon', description: 'Background watcher running test-radius on save' },
+    { name: 'dead-code', description: 'Find exported symbols never imported' },
+    { name: 'deps', description: 'Find outdated packages and queue upgrade tasks' },
+    { name: 'docs', description: 'Extract JSDoc blocks' },
+    { name: 'doctor', description: 'Deep environment diagnostics' },
+    { name: 'epic', description: 'Decompose a markdown checklist into child tasks' },
+    { name: 'find', description: 'Semantic-ish symbol search' },
+    { name: 'focus', description: 'Open a sandbox in your editor' },
+    { name: 'format', description: 'Run Prettier on a single file' },
+    { name: 'fuzz', description: 'Generate fuzz tests for a function' },
+    { name: 'graph', description: 'Map import/export dependency graph' },
+    { name: 'heal', description: 'Self-healing hotfix when typecheck fails' },
+    { name: 'health', description: 'Quick pre-flight environment check' },
+    { name: 'knowledge', description: 'Search past tasks, audits, specs, PRs' },
+    { name: 'memory', description: 'Cross-agent markdown memory bank' },
+    { name: 'message', description: 'Queue a structured message into a mailbox' },
+    { name: 'migrate', description: 'Translator + Verifier agent pair' },
+    { name: 'mock', description: 'Generate a TS mock factory for an interface' },
+    { name: 'path', description: 'Print absolute path of a sandbox' },
+    { name: 'pick', description: 'Fuzzy-finder over sandboxes' },
+    { name: 'pr', description: 'Auto-commit and optionally open a PR' },
+    { name: 'profile', description: 'Profile a Node process and assign optimizer' },
+    { name: 'refactor', description: 'Break a refactor into chunks' },
+    { name: 'references', description: 'Fast git-grep symbol usages' },
+    { name: 'release', description: 'Bump semver and draft release notes' },
+    { name: 'repro', description: 'Verify TDD: tests modified before source' },
+    { name: 'review', description: 'Spawn an adversarial peer-review agent' },
+    { name: 'screenshot', description: 'Capture a Playwright screenshot' },
+    { name: 'task', description: 'Append human feedback to a task file' },
+    { name: 'telemetry', description: 'Aggregated session metrics dashboard' },
+    { name: 'triage', description: 'Convert a raw bug report into a spec' },
+    { name: 'visual', description: 'Screenshot-based visual regression' },
+] as const;
 
-export * from './useCases/arch.ts';
-export * from './useCases/audit-sec.ts';
-export * from './useCases/chaos.ts';
-export * from './useCases/chat.ts';
-export * from './useCases/compress.ts';
-export * from './useCases/context.ts';
-export * from './useCases/daemon.ts';
-export * from './useCases/dead-code.ts';
-export * from './useCases/deps.ts';
-export * from './useCases/docs.ts';
-export * from './useCases/epic.ts';
-export * from './useCases/find.ts';
-export * from './useCases/fuzz.ts';
-export * from './useCases/graph.ts';
-export * from './useCases/heal.ts';
-export * from './useCases/health.ts';
-
-export * from './useCases/init.ts';
-export * from './useCases/knowledge.ts';
-export * from './useCases/logs.ts';
-export * from './useCases/memory.ts';
-export * from './useCases/migrate.ts';
-export * from './useCases/mock.ts';
-export * from './useCases/pr.ts';
-export * from './useCases/profile.ts';
-export * from './useCases/refactor.ts';
-export * from './useCases/references.ts';
-export * from './useCases/release.ts';
-export * from './useCases/repro.ts';
-export * from './useCases/review.ts';
-export * from './useCases/screenshot.ts';
-export * from './useCases/telemetry.ts';
-export * from './useCases/test-radius.ts';
-export * from './useCases/test.ts';
-export * from './useCases/triage.ts';
-export * from './useCases/validate.ts';
-export * from './useCases/visual.ts';
+for (const cmd of COMMAND_CATALOG) {
+    register_capability({
+        name: cmd.name,
+        version: '1.0.0',
+        type: 'command',
+        description: cmd.description,
+        entry_point: `./useCases/${cmd.name}.ts`,
+    });
+}

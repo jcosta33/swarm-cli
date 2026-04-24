@@ -6,7 +6,7 @@ import { spawnSync } from 'child_process';
 import { red, cyan, bold, dim, yellow, green, parse_args } from '../../Terminal/index.ts';
 import { get_repo_root } from '../../Workspace/index.ts';
 
-function extractExports(content: string) {
+export function extractExports(content: string) {
     const exports = [];
     const regex = /export\s+(const|let|var|function|class|type|interface)\s+([a-zA-Z0-9_]+)/g;
     let match;
@@ -29,7 +29,7 @@ function run(): number {
     const targetFile = positional[0];
     
     if (!targetFile) {
-        console.log(red('Usage: agents:dead-code <path/to/file.ts>'));
+        console.log(red('Usage: swarm dead-code <path/to/file.ts>'));
         return 1;
     }
 

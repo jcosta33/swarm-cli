@@ -32,7 +32,14 @@ import { existsSync, mkdirSync } from 'fs';
 import { join, resolve } from 'path';
 import { run_agent_launch } from './launch-agent.ts';
 
-function run(): number {
+type CreateSandboxInput = {
+    slug: string;
+    title: string;
+    type?: string;
+    launch: boolean;
+};
+
+function create_sandbox(input: CreateSandboxInput): number {
     let repoRoot: string;
     try {
         repoRoot = get_repo_root();
@@ -42,16 +49,9 @@ function run(): number {
     }
 
     const config = load_config(repoRoot);
-    const { flags, positional } = parse_args(process.argv.slice(2));
+    const title = input.title;
 
-    let slug = positional[0];
-    const title = positional.slice(1).join(' ');
-
-    if (!slug) {
-        return 1; // prompt_input is async, handled below
-    }
-
-    slug = to_slug(slug, config.slugMaxLen);
+    let slug = to_slug(input.slug, config.slugMaxLen);
 
     const repoName = get_repo_name(repoRoot);
 
@@ -120,7 +120,7 @@ function run(): number {
         createdAt: new Date().toISOString(),
         status: 'active',
         taskFile: `.agents/tasks/${slug}.md`,
-        type: (flags.get('type') as string | undefined) ?? '',
+        type: input.type ?? '',
     };
 
     if (config.writeTaskTemplateOnCreate !== false) {
@@ -143,8 +143,7 @@ function run(): number {
     );
 
     // Optionally launch agent
-    const shouldLaunch = flags.get('launch') === true || flags.get('launch') === 'true';
-    if (shouldLaunch) {
+    if (input.launch) {
         return run_agent_launch({ repoRoot, slug, worktreePath, title });
     }
 
@@ -155,7 +154,7 @@ function run(): number {
 }
 
 async function main(): Promise<number> {
-    const { positional } = parse_args(process.argv.slice(2));
+    const { positional, flags } = parse_args(process.argv.slice(2));
     let slug = positional[0];
     let title = positional.slice(1).join(' ');
 
@@ -170,12 +169,12 @@ async function main(): Promise<number> {
         title = await prompt_input('Task title: ', slug);
     }
 
-    // Re-assemble argv so the sync run() can parse them normally
-    const extraArgs = [];
-    if (title && title !== slug) extraArgs.push(title);
-    process.argv = [process.argv[0], process.argv[1], slug, ...extraArgs, ...process.argv.slice(2).filter((a) => a !== slug && a !== title)];
-
-    return run();
+    return create_sandbox({
+        slug,
+        title,
+        type: typeof flags.get('type') === 'string' ? (flags.get('type') as string) : undefined,
+        launch: flags.get('launch') === true || flags.get('launch') === 'true',
+    });
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {

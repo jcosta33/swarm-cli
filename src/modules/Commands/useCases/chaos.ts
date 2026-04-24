@@ -48,7 +48,7 @@ function run(): number {
         console.log(green(`✓ Chaos Monkey STOPPED.`));
         console.log(dim(`Development environment returned to normal.`));
     } else {
-        console.log(red('Usage: agents:chaos <start|stop> [--delay 2000] [--fail-rate 0.2]'));
+        console.log(red('Usage: swarm chaos <start|stop> [--delay 2000] [--fail-rate 0.2]'));
         return 1;
     }
     console.log('');

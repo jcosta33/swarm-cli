@@ -8,7 +8,7 @@ import { get_repo_root } from '../../Workspace/index.ts';
 
 const newCommandPath = join(dirname(fileURLToPath(import.meta.url)), 'new.ts');
 
-function run(): number {
+export function run(): number {
     let repoRoot;
     try {
         repoRoot = get_repo_root();
@@ -41,7 +41,7 @@ function run(): number {
 
     if (res.status === 0) {
         console.log(green(`\n✓ Heal agent spawned successfully.`));
-        console.log(dim(`The agent should now fix the type errors and run agents:pr`));
+        console.log(dim(`The agent should now fix the type errors and run \`swarm pr\`.`));
         return 0;
     } else {
         console.log(red(`\n✗ Failed to spawn heal agent.`));

@@ -8,9 +8,10 @@ import {
     cancel,
 } from '@clack/prompts';
 import { spawnSync } from 'child_process';
-import { existsSync } from 'fs';
+import { existsSync, lstatSync, realpathSync } from 'fs';
 import os from 'os';
-import { basename } from 'path';
+import { basename, dirname, join, resolve } from 'path';
+import { fileURLToPath } from 'url';
 import color from 'picocolors';
 import { print_help } from './modules/Commands/useCases/help.ts';
 import { run_dashboard } from './modules/Commands/useCases/dashboard.ts';
@@ -180,21 +181,41 @@ async function main(): Promise<number> {
 
     const cmd = argv[0];
 
-    // Sanitize command to prevent path traversal
-    if (!/^[a-z0-9-]+$/.test(cmd)) {
+    // Strict allowlist: command names are kebab-case ASCII. Rejects anything
+    // that could traverse paths or hit a symlinked file outside our useCases dir.
+    if (!/^[a-z0-9][a-z0-9-]*$/.test(cmd)) {
         console.error(color.red(`Invalid command: ${cmd}`));
         return 1;
     }
 
-    const commandPath = new URL(
-        `./modules/Commands/useCases/${cmd}.ts`,
-        import.meta.url
-    );
+    const useCasesDir = resolve(dirname(fileURLToPath(import.meta.url)), 'modules/Commands/useCases');
+    const candidatePath = join(useCasesDir, `${cmd}.ts`);
 
-    if (existsSync(commandPath.pathname)) {
+    if (existsSync(candidatePath)) {
+        // Reject symlinks and verify the resolved path is still inside useCasesDir.
+        // Otherwise an attacker who can drop a file on disk could redirect a swarm
+        // command to an arbitrary script.
+        try {
+            const stat = lstatSync(candidatePath);
+            if (stat.isSymbolicLink()) {
+                console.error(color.red(`Refusing to execute symlinked command: ${cmd}`));
+                return 1;
+            }
+            const realCandidate = realpathSync(candidatePath);
+            const realRoot = realpathSync(useCasesDir);
+            if (!realCandidate.startsWith(realRoot + '/') && realCandidate !== realRoot) {
+                console.error(color.red(`Command resolved outside useCases dir: ${cmd}`));
+                return 1;
+            }
+        } catch (e: unknown) {
+            const message = e instanceof Error ? e.message : String(e);
+            console.error(color.red(`Failed to validate command path: ${message}`));
+            return 1;
+        }
+
         const res = spawnSync(
             process.execPath,
-            ['--experimental-strip-types', commandPath.pathname, ...argv.slice(1)],
+            ['--experimental-strip-types', candidatePath, ...argv.slice(1)],
             {
                 stdio: 'inherit',
                 cwd: process.cwd(),
@@ -221,6 +242,12 @@ function generate_trace_id(): string {
 
 const traceId = generate_trace_id();
 
-void run_with_context({ trace_id: traceId }, () => main()).then((code) => {
-    process.exitCode = code;
-});
+run_with_context({ trace_id: traceId }, () => main())
+    .then((code) => {
+        process.exitCode = code;
+    })
+    .catch((err: unknown) => {
+        const message = err instanceof Error ? err.stack ?? err.message : String(err);
+        console.error(color.red(`Fatal: ${message}`));
+        process.exitCode = 1;
+    });

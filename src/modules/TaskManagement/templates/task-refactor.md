@@ -133,7 +133,7 @@ Stop. Refactors are high-risk: they touch many files, they drift from intent, an
 ### Verification outputs (paste actual command output — do not paraphrase)
 
 - `git status` →
-- `pnpm agents:validate` (last 2 lines):
+- `pnpm deps:validate` (last 2 lines):
 
 ### Architecture — the non-negotiable
 

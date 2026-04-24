@@ -73,7 +73,7 @@ List the files you expect to change. If investigation requires more, extend the 
 - Do not switch branches unless explicitly instructed
 - Do not merge, rebase, or push unless explicitly instructed
 - Run `{{cmdInstall}}` to install dependencies
-- Run `pnpm agents:validate` after fixing
+- Run `pnpm deps:validate` after fixing
 - Prefer **minimal** fixes for the reported bug; opportunistic fixes elsewhere should be small, clearly correct, and documented
 - **Proactively research and read related docs.** If context from another spec, research, or bug file is needed, you are empowered to browse `.agents/specs/`, `.agents/research/`, or `.agents/bugs/` on your own to confirm your hypotheses and make informed decisions. Any other codebase docs (`docs/`, `AGENTS.md`, `.agents/skills/`, `.agents/audits/`) are also fair game.
 
@@ -86,7 +86,7 @@ List the files you expect to change. If investigation requires more, extend the 
 - [ ] Fill in root cause above
 - [ ] Implement fix
 - [ ] Verify fix resolves the issue
-- [ ] `pnpm agents:validate` passes
+- [ ] `pnpm deps:validate` passes
 - [ ] Self-review: Verification outputs pasted
 - [ ] Self-review: Root cause answered
 - [ ] Self-review: Minimality answered
@@ -133,7 +133,7 @@ Stop. The standard for a fix is brutal simplicity: the minimum change that addre
 
 - `git status` →
 - `git diff --stat` →
-- `pnpm agents:validate` (last 2 lines):
+- `pnpm deps:validate` (last 2 lines):
 
 ### Root cause
 

@@ -60,7 +60,7 @@ function run(): number {
     const targetFile = positional[0];
     
     if (!targetFile) {
-        console.log(red('Usage: agents:compress <path/to/file.ts>'));
+        console.log(red('Usage: swarm compress <path/to/file.ts>'));
         return 1;
     }
 

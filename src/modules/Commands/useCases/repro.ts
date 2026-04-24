@@ -4,7 +4,7 @@ import { spawnSync } from 'child_process';
 import { red, cyan, bold, dim, green, yellow } from '../../Terminal/index.ts';
 import { get_repo_root } from '../../Workspace/index.ts';
 
-function run(): number {
+export function run(): number {
     let repoRoot;
     try {
         repoRoot = get_repo_root();

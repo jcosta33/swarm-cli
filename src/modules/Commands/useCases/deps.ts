@@ -12,7 +12,7 @@ interface OutdatedInfo {
     latest?: string;
 }
 
-function run(): number {
+export function run(): number {
     let repoRoot: string;
     try {
         repoRoot = get_repo_root();
@@ -81,7 +81,7 @@ function run(): number {
 Intelligently upgrade \`${pkg}\` from \`${info.current ?? 'unknown'}\` to \`${info.latest ?? 'unknown'}\`.
 
 ## Plan
-1. Use \`agents:web\` or curl to fetch the GitHub release notes for \`${pkg}\` version \`${info.latest ?? 'unknown'}\`.
+1. Fetch the GitHub release notes for \`${pkg}\` version \`${info.latest ?? 'unknown'}\` (curl or web fetch).
 2. Analyze breaking changes.
 3. Update \`package.json\` and run \`pnpm install\`.
 4. Apply necessary API migrations in \`src/\`.

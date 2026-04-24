@@ -5,7 +5,7 @@ import { join } from 'path';
 import { red, cyan, bold, dim, green, yellow, parse_args } from '../../Terminal/index.ts';
 import { get_repo_root } from '../../Workspace/index.ts';
 
-function findFiles(dir: string): string[] {
+export function findFiles(dir: string): string[] {
     let results: string[] = [];
     try {
         const entries = readdirSync(dir);
@@ -38,8 +38,8 @@ function run(): number {
     const goal = positional.slice(1).join(' ') || String(flags.get('goal') ?? '');
     
     if (!targetDir || !goal) {
-        console.log(red('Usage: agents:refactor <directory> <goal>'));
-        console.log(dim('Example: agents:refactor src/modules "Move all inline GraphQL to Repositories"'));
+        console.log(red('Usage: swarm refactor <directory> <goal>'));
+        console.log(dim('Example: swarm refactor src/modules "Move all inline GraphQL to Repositories"'));
         return 1;
     }
 
@@ -99,7 +99,7 @@ ${relativeFiles.map(f => `- ${f}`).join('\n')}
 
 - [ ] Refactor applied
 - [ ] Tests passing
-- [ ] agents:validate passing
+- [ ] \`swarm validate\` passing
 
 ## Next steps
 - Read the files, apply the refactor, and generate a PR.

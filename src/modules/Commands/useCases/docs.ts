@@ -5,7 +5,7 @@ import { join } from 'path';
 import { red, cyan, bold, dim, green, parse_args } from '../../Terminal/index.ts';
 import { get_repo_root } from '../../Workspace/index.ts';
 
-function extractDocs(content: string) {
+export function extractDocs(content: string) {
     const lines = content.split('\n');
     const docs = [];
     let inDocBlock = false;
@@ -44,7 +44,7 @@ function run(): number {
     const targetFile = positional[0];
     
     if (!targetFile) {
-        console.log(red('Usage: agents:docs <path/to/file.ts>'));
+        console.log(red('Usage: swarm docs <path/to/file.ts>'));
         return 1;
     }
 

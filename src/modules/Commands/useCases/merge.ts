@@ -72,7 +72,7 @@ function get_matching_branches(repoRoot: string, pattern: string): string[] {
         .filter((b) => b.length > 0);
 }
 
-function run(): number {
+export function run(): number {
     let repoRoot: string;
     try {
         repoRoot = get_repo_root();

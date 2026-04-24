@@ -9,7 +9,7 @@ import { get_repo_root } from '../../Workspace/index.ts';
 
 const newCommandPath = join(dirname(fileURLToPath(import.meta.url)), 'new.ts');
 
-function run(): number {
+export function run(): number {
     let repoRoot;
     try {
         repoRoot = get_repo_root();
@@ -22,7 +22,7 @@ function run(): number {
     const targetSlug = positional[0];
     
     if (!targetSlug) {
-        console.log(red('Usage: agents:review <slug-to-review>'));
+        console.log(red('Usage: swarm review <slug-to-review>'));
         return 1;
     }
 
@@ -67,7 +67,7 @@ Review the changes made in \`${targetSlug}\` and ensure they are flawless.
 `;
     writeFileSync(taskPath, template, 'utf8');
 
-    // Automatically invoke agents:new
+    // Automatically invoke `swarm new`
     const res = spawnSync(process.execPath, ['--experimental-strip-types', newCommandPath, reviewSlug, '--base', branchName], { stdio: 'inherit', cwd: repoRoot });
     
     if (res.status === 0) {

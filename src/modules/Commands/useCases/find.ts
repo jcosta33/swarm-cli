@@ -5,12 +5,15 @@ import { get_repo_root } from '../../Workspace/index.ts';
 
 import { spawnSync } from 'child_process';
 
+export function escape_regex(str: string) {
+    return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 function run(): number {
     let repoRoot;
     try {
         repoRoot = get_repo_root();
     } catch (_e: unknown) {
-
         console.error(red('Error: Not inside a git repository.'));
         return 1;
     }
@@ -20,17 +23,13 @@ function run(): number {
     const queryTarget = positional[1];
 
     if (!queryType || !queryTarget) {
-        console.log(red('Usage: agents:find <type> <target>'));
+        console.log(red('Usage: swarm find <type> <target>'));
         console.log(dim('Types: class, interface, function, implements, extends'));
-        console.log(dim('Example: agents:find implements TransportHandler'));
+        console.log(dim('Example: swarm find implements TransportHandler'));
         return 1;
     }
 
     console.log(cyan(`\nSemantic Search: ${bold(queryType)} ${bold(queryTarget)}...\n`));
-
-    function escape_regex(str: string) {
-        return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    }
 
     const target = escape_regex(queryTarget);
     let regex: string;

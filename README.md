@@ -1,130 +1,164 @@
 # Swarm CLI
 
-A self-improving, agentic CLI toolkit for orchestrating AI agents in isolated git worktrees.
+A self-improving, agentic CLI toolkit for orchestrating AI coding agents in isolated git worktrees.
+
+Swarm boots one **sandboxed worktree per task**, drives each session from a Markdown task file, and exposes a battery of context-compression, codebase-analysis, and orchestration utilities so agents can do useful work without trampling your main checkout.
 
 ---
 
 ## 🚀 Quick Start
 
-Install globally (or use `npx`):
+### Requirements
+
+- **Node.js ≥ 22.6.0** (Swarm runs TypeScript directly via `--experimental-strip-types` — older Node versions will refuse to start)
+- **git** ≥ 2.5 (for `git worktree`)
+- A package manager (`pnpm` recommended, `npm` works as a fallback)
+
+### Install
 
 ```bash
-npm link        # from the repo root
+# from the repo root
+npm link
 # or
 npm install -g swarm-cli
 ```
 
-Run the dashboard:
+### First run
 
 ```bash
-swarm
+swarm init        # scaffold .agents/, swarm.config.json, enable git rerere
+swarm doctor      # verify your environment is wired up
+swarm             # launch the interactive dashboard
 ```
 
-This opens an interactive TUI where you can create sandboxes, open agents, list worktrees, and run validations. Commands are also available directly for scripting and power users:
+Running `swarm` with no arguments opens an interactive TUI. You can also drive every command directly:
 
 ```bash
 swarm new my-feature "Implement the new billing module"
 swarm list
 swarm open my-feature
 swarm validate
+swarm pr my-feature
 ```
+
+> **Tip:** `swarm <agent-name>` (e.g. `swarm claude`, `swarm codex`) launches a supported agent CLI inside the current worktree with a colourful banner. If the agent is missing, Swarm offers to install it.
 
 ---
 
 ## 🧠 Core Concepts
 
-- **Sandboxing (Worktrees):** Agents never work directly in your main repository directory. The CLI provisions dedicated `git worktree` environments. This prevents agents from accidentally breaking your active workspace or conflicting with uncommitted changes.
-- **Task-Driven:** Every agent session is driven by a Markdown task file (e.g., `.agents/tasks/<slug>.md`). This file contains the objective, constraints, and a strict verification checklist that the agent must complete before declaring the task done.
-- **Empirical Verification:** Agents are required to prove their work. They must paste actual console output from tests, linters, and compilers into their task files to verify correctness.
-- **State Management:** The CLI tracks all active sandboxes, their PIDs, and their current status in `.agents/state.json`.
+- **Sandboxing (Worktrees):** Agents never edit your primary checkout. Swarm provisions a dedicated `git worktree` (and branch `agent/<slug>`) per task. The main repo stays clean and uncommitted work stays safe.
+- **Task-Driven:** Every session is rooted in a Markdown task file at `.agents/tasks/<slug>.md` containing the objective, plan, decisions, blockers, and a self-review checklist.
+- **Empirical Verification:** Tasks are not "done" until the self-review section contains pasted console output (`pnpm typecheck`, `pnpm test:run`, `pnpm deps:validate`).
+- **State Management:** Active sandboxes live in `.agents/state.json` (PID, status, agent, timestamps). Telemetry is appended to a SQLite DB at `.agents/logs/telemetry.db`.
+- **Configuration:** `swarm.config.json` at the repo root holds default branch, agent, terminal backend, slug rules, and per-agent command/args. `swarm init` writes a sensible starter file.
 
 ---
 
 ## 🛠️ Command Reference
 
-The Swarm CLI is organized into evolutionary waves of capabilities, from basic workspace management to enterprise-scale production engineering.
+### Setup & lifecycle
 
-### Core Subcommands
+- `init` — Scaffold `.agents/`, write `swarm.config.json`, enable `git rerere`.
+- `new <slug> [title] [--launch] [--type <kind>]` — Create a sandbox worktree and seeded task file. `--launch` auto-spawns the configured agent.
+- `open <slug>` — Reopen an existing sandbox terminal.
+- `list` — List active sandboxes with status, PID, and backend.
+- `show <slug>` — Detailed metadata, dirtiness, and telemetry summary.
+- `status <slug>` — Rich runtime status: process state, working-tree dirtiness, recent telemetry.
+- `task <slug>` — Append human feedback / hints to the sandbox's task file.
+- `pick [action]` — Fuzzy-finder over sandboxes; default action is `open` (others: `new`, `focus`, `remove`, `show`).
+- `focus <slug>` — Open the sandbox worktree in your default editor.
+- `path <slug>` — Print the absolute filesystem path of a sandbox worktree.
+- `remove <slug> [--force]` — Forcefully remove a sandbox and its worktree.
+- `prune` — Clean up merged or orphaned sandboxes.
+- `merge <branch>` — Merge a branch into the current one with structured conflict reporting.
+- `pr <slug>` — Auto-commit and open a GitHub PR populated from the task file.
+- `health` — Quick pre-flight environment check.
+- `doctor` — Deeper diagnostics (Node version, git, pnpm/npm, rerere, `.agents/`, state, worktrees, telemetry DB).
 
-Manage the lifecycle of agent sandboxes.
+### Validation & test loops
 
-- `new [slug] [title]` - Create a new sandbox worktree and task file.
-- `open <slug>` - Reopen an existing sandbox terminal.
-- `list` - List all active sandboxes and their status.
-- `show <slug>` - Show detailed metadata and history for a specific sandbox.
-- `task <slug>` - Interactive prompt to append human feedback/hints to the task file.
-- `validate` - Run configured linters and typechecks, truncating output for LLM context limits.
-- `test` - Run the test runner (Vitest) with smart log truncation.
-- `test-radius <file>` - Calculate the blast radius of a file and run only the impacted specs.
-- `pr <slug>` - Auto-commit changes and generate a GitHub Pull Request based on the completed task file.
-- `screenshot [url]` - Capture a screenshot of the running app using Playwright for visual validation by an LLM.
-- `health` - Run pre-flight environment checks.
+- `validate` — Run the configured lint/typecheck commands with output truncated for LLM context limits.
+- `test [...vitest-args]` — Run Vitest with smart log truncation.
+- `test-radius <file>` — Compute the blast radius of a file and run only the affected specs.
+- `daemon` — Background watcher that re-runs `test-radius` on file save (debounced).
+- `repro` — Verify a TDD invariant: tests must be modified before source code in the current diff.
+- `format <file>` — Run Prettier on a single file with truncated output.
 
-### Context & Analysis
+### Context, search & analysis
 
-Tools for deep codebase understanding, context compression, and security analysis.
+- `compress <file>` — Skeletonize a TypeScript file (drop function bodies, keep signatures + JSDoc) to save LLM tokens.
+- `graph <file>` — Map the import/export dependency graph of a module.
+- `references <symbol> [--path <dir>]` — Fast `git grep` for usages of a symbol.
+- `find <type> <target>` — Semantic-ish search for `class`, `interface`, `function`, `implements`, or `extends`.
+- `docs <file>` — Extract and format JSDoc blocks from a module.
+- `complexity <file>` — Naive cyclomatic complexity heuristic for maintainability gating.
+- `audit-sec <file>` — Scan a single file for dangerous patterns, hardcoded secrets, and common XSS vectors.
+- `dead-code <file>` — Find exported symbols never imported elsewhere in the project.
+- `context [dir]` — Generate a semantic map of exported symbols (for RAG / agent retrieval).
+- `arch` — Lint cross-module boundary invariants (delegates to `pnpm deps:validate`).
 
-- `compress <file>` - Strip function bodies from a TypeScript file to save LLM context tokens while retaining signatures.
-- `graph <file>` - Extract and map the import/export dependencies of a module.
-- `references <symbol>` - Fast codebase scan to find usages of a specific symbol or class.
-- `docs <file>` - Extract and format JSDoc blocks from a module.
-- `complexity <file>` - Calculate cyclomatic complexity heuristics to enforce maintainability invariants.
-- `audit-sec <file>` - Scan for common dangerous patterns, secrets, and vulnerabilities.
-- `dead-code <file>` - Find exported symbols that are never imported anywhere in the project.
-- `format <file>` - Wrapper for Prettier/ESLint autofixes with truncated output.
-- `logs <slug>` - View the execution output logs of a running agent session.
-- `health` - Run pre-flight environment checks for the Swarm.
-- `context [dir]` - Generate a semantic map of exported symbols for Retrieval-Augmented Generation (RAG).
-- `memory <get|set|list>` - Global memory bank for cross-agent invariant tracking and learned preferences.
+### Memory, knowledge & telemetry
 
-### Autonomous Lifecycles
+- `memory <get|set|list>` — Markdown-backed cross-agent memory bank in `.agents/memory/`.
+- `knowledge <query>` — Lightweight search over past tasks, audits, specs, and PRs.
+- `logs [--agent <a>] [--slug <s>] [--follow] [--prune <days>] [--json]` — Query / tail / prune the telemetry SQLite DB.
+- `telemetry` — Aggregated dashboard of session counts, time-to-completion, and exit codes.
 
-Tools for independent agent collaboration, planning, and self-healing.
+### Multi-agent orchestration
 
-- `epic <file>` - Decompose a high-level markdown list into individual, actionable child tasks.
-- `triage <file>` - Convert an unstructured bug report into a strict, verifiable technical spec.
-- `arch` - Lint and enforce cross-module boundary invariants and architectural rules.
-- `review <slug>` - Spawn an adversarial peer-review agent session to critique another agent's work.
-- `chat <slug> [msg]` - Send or read an IPC message with another running agent.
-- `repro` - Verify that test files were modified _before_ source code to enforce Test-Driven Development.
-- `find <type> <target>` - Semantic search across the codebase (e.g., find all classes that implement an interface).
-- `mock <file> <Name>` - Instantly generate a TypeScript mock factory for a specific interface.
-- `daemon` - Background watcher that automatically runs `test-radius` when human developers save files.
-- `heal` - Self-healing hotfix generator that triggers automatically on CI branch failures.
+- `epic <file>` — Decompose a markdown checklist epic into one child task per item.
+- `decompose <graph.json> [--dry-run] [--execute] [--max-tasks N]` — Run a typed task DAG: validate, topo-sort, optionally provision worktrees and launch agents in dependency waves.
+- `triage <file>` — Convert an unstructured bug report into a strict, verifiable spec.
+- `review <slug>` — Spawn an adversarial peer-review agent against another agent's branch.
+- `chat <slug> [--message ...] [--from <slug>]` — Append-only IPC log between two agents (read mode if no message).
+- `message <slug> <json>` — Queue a structured JSON message into another agent's mailbox.
+- `lock <claim|release|list>` — Advisory file locking for parallel-agent coordination.
+- `heal` — Self-healing hotfix: if `pnpm typecheck` fails, spawn an emergency-fix agent.
 
-### Production Scale
+### Production-scale tooling
 
-Enterprise-scale orchestration tools for massive refactors and reliability engineering.
+- `refactor <dir> <goal>` — Break a massive refactor into 5-file chunks distributed as child tasks.
+- `migrate <file> <lang>` — Spawn a Translator + Verifier agent pair to port code into a new language/framework.
+- `mock <file> <Name>` — Generate a TypeScript mock factory for a specific interface.
+- `fuzz <file> <func>` — Generate and execute unexpected test permutations against a function signature.
+- `chaos <start|stop>` — Toggle latency / network-failure injection via `.env.local` flags.
+- `visual <baseline|compare> [url]` — Screenshot-based visual regression loop (uses Playwright).
+- `screenshot [url]` — Capture a Playwright screenshot of the running app for LLM visual review.
+- `profile <cmd>` — Profile a Node process and assign a Performance Engineer agent to optimize hotspots.
+- `release` — Bump semver, generate changelog from git history, draft release notes.
+- `deps` — Find outdated packages, fetch release notes, generate upgrade tasks.
 
-- `refactor <dir> <goal>` - Break a massive refactor into 5-file chunks and distribute them as tasks.
-- `deps` - Find outdated packages, fetch release notes, and generate upgrade tasks.
-- `migrate <file> <lang>` - Spawn a Translator and Verifier agent pair to rewrite code into a new language/framework.
-- `fuzz <file> <func>` - Generate and execute unexpected test permutations (nulls, NaNs, etc.) against a function signature.
-- `chaos <start|stop>` - Inject latency and mock network failures into the local environment to test resilience.
-- `visual <baseline|compare>` - Screenshot-based visual regression comparison loop.
-- `knowledge <query>` - Semantic vector-like search across past tasks, PRs, and specs.
-- `telemetry` - Dashboard tracking Swarm resource/token usage, time-to-completion, and success rates.
-- `profile <cmd>` - Analyze a Node process for bottlenecks and assign a Performance Engineer agent to optimize them.
-- `release` - Auto-bump semantic version, generate a changelog from git history, and draft release notes.
+### Workspace utilities
 
-### Workspace Management
+- `ast-rename <file> <Old> <New>` — Structural rename of a symbol across a file.
+- `capabilities` — Print the registered command and adapter capabilities catalog.
+- `dashboard` — Re-open the interactive TUI (also the no-arg default).
+- `help` — Print the condensed command reference.
 
-Utilities for maintaining a clean Swarm environment.
+### Supported agent runtimes
 
-- `ast rename` - Structural rename utility for safely modifying symbols across the project.
-- `lock <claim|release|list>` - Advisory file locking for parallel agent coordination.
-- `merge <branch>` - Merge a branch with structured conflict reporting.
-- `remove <slug>` - Forcefully remove a sandbox and delete its worktree.
-- `prune` - Clean up and remove merged or orphaned sandboxes.
-- `doctor` - Run diagnostic preflight checks on the CLI and workspace.
-- `path <slug>` - Print the absolute filesystem path to a specific sandbox worktree.
-- `focus <slug>` - Open the specified sandbox worktree in your default editor.
-- `pick` - Interactive fuzzy-finder menu to select tasks for `new`, `open`, `focus`, or `remove`.
+`swarm <agent>` proxies into one of the supported agent CLIs and auto-prompts to install it if missing:
+
+`claude`, `codex`, `droid`, `gemini`, `kimi`, `opencode`, `aider`, `cline`, `swe-agent`.
 
 ---
 
 ## 🔒 Safety & Permissions
 
-The Swarm CLI operates under a strict "Show, Don't Tell" philosophy. Agents are required to provide empirical proof (console output) of their success. The CLI defaults to non-destructive actions, but agents have full filesystem access within their isolated worktrees.
+Swarm operates under a strict "Show, Don't Tell" philosophy: agents must paste empirical proof (test/lint/typecheck output) into the task file before declaring a task complete. The CLI itself defaults to non-destructive actions — `remove` requires `--force`, and `prune` only removes merged or orphaned worktrees.
 
-When an agent completes a task, human review is typically performed by reading the self-review section of the task file and running `swarm pr <slug>` to merge the verified code back into the main repository.
+When an agent finishes a task, human review is performed against the task file's `## Self-review` section, then `swarm pr <slug>` produces a pull request whose body is generated from the same task file.
+
+For the canonical agent rules — sandbox boundaries, prohibited commands, file-system safety, and architectural invariants — see [`AGENTS.md`](./AGENTS.md) and the skills in [`.agents/skills/`](./.agents/skills/).
+
+---
+
+## 📚 Further reading
+
+- [`AGENTS.md`](./AGENTS.md) — canonical architectural rules and TypeScript soundness contract
+- [`docs/agents/01-process.md`](./docs/agents/01-process.md) — documentation-first workflow
+- [`docs/agents/03-workflow.md`](./docs/agents/03-workflow.md) — step-by-step session execution
+- [`docs/agents/02-file-types.md`](./docs/agents/02-file-types.md) — audit / spec / research / skill / task definitions
+- [`docs/06-testing.md`](./docs/06-testing.md) — Vitest layout and conventions
+- [`docs/07-conventions.md`](./docs/07-conventions.md) — coding patterns and lint-aligned style
