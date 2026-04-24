@@ -9,6 +9,9 @@ import {
     delete_branch,
     list_branches_by_prefix,
     worktree_sync,
+    worktree_create,
+    worktree_remove,
+    worktree_prune,
 } from '../../Workspace/index.ts';
 
 import { describe, expect, it, vi, beforeEach } from 'vitest';
@@ -243,6 +246,50 @@ branch refs/heads/agent/feature
         it('returns false when rebase fails', () => {
             (spawnSync as ReturnType<typeof vi.fn>).mockReturnValue({ status: 1 });
             expect(worktree_sync('/repo--feature', 'main')).toBe(false);
+        });
+    });
+
+    describe('worktree_create', () => {
+        it('creates worktree for existing branch', () => {
+            (spawnSync as ReturnType<typeof vi.fn>)
+                .mockReturnValueOnce({ status: 0 }) // branch_exists = true
+                .mockReturnValueOnce({ status: 0 }); // worktree add
+            worktree_create('/repo--feature', 'agent/feature', 'main', '/repo');
+            const calls = (spawnSync as ReturnType<typeof vi.fn>).mock.calls;
+            const lastCall = calls[calls.length - 1];
+            expect(lastCall).toEqual(['git', ['worktree', 'add', '/repo--feature', 'agent/feature'], { cwd: '/repo', encoding: 'utf8' }]);
+        });
+
+        it('creates new branch when branch does not exist', () => {
+            (spawnSync as ReturnType<typeof vi.fn>)
+                .mockReturnValueOnce({ status: 1 }) // branch_exists = false
+                .mockReturnValueOnce({ status: 0 }); // worktree add -b
+            worktree_create('/repo--feature', 'agent/feature', 'main', '/repo');
+            const calls = (spawnSync as ReturnType<typeof vi.fn>).mock.calls;
+            const lastCall = calls[calls.length - 1];
+            expect(lastCall).toEqual(['git', ['worktree', 'add', '-b', 'agent/feature', '/repo--feature', 'main'], { cwd: '/repo', encoding: 'utf8' }]);
+        });
+    });
+
+    describe('worktree_remove', () => {
+        it('removes worktree without force', () => {
+            (spawnSync as ReturnType<typeof vi.fn>).mockReturnValue({ status: 0 });
+            worktree_remove('/repo--feature', false, '/repo');
+            expect(spawnSync).toHaveBeenLastCalledWith('git', ['worktree', 'remove', '/repo--feature'], { cwd: '/repo', encoding: 'utf8' });
+        });
+
+        it('removes worktree with force', () => {
+            (spawnSync as ReturnType<typeof vi.fn>).mockReturnValue({ status: 0 });
+            worktree_remove('/repo--feature', true, '/repo');
+            expect(spawnSync).toHaveBeenLastCalledWith('git', ['worktree', 'remove', '--force', '/repo--feature'], { cwd: '/repo', encoding: 'utf8' });
+        });
+    });
+
+    describe('worktree_prune', () => {
+        it('runs git worktree prune', () => {
+            (spawnSync as ReturnType<typeof vi.fn>).mockReturnValue({ status: 0 });
+            worktree_prune('/repo');
+            expect(spawnSync).toHaveBeenLastCalledWith('git', ['worktree', 'prune'], { cwd: '/repo', encoding: 'utf8' });
         });
     });
 });
