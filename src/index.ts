@@ -16,7 +16,7 @@ import { print_help } from './modules/Commands/useCases/help.ts';
 import { run_dashboard } from './modules/Commands/useCases/dashboard.ts';
 import { get_adapter } from './modules/Adapters/index.ts';
 
-const AGENT_INSTALL_INFO: Record<string, { install: string; desc: string }> = {
+const AGENT_INSTALL_INFO: Record<string, { install: string; desc: string } | undefined> = {
     aider: { install: 'pip install aider-chat', desc: 'Interactive command-line pair-programming AI.' },
     cline: { install: 'npm install -g @cline/cli', desc: 'Autonomous engineering CLI agent.' },
     'swe-agent': { install: 'pip install swe-agent', desc: 'Headless agent for SWE tasks.' },
@@ -91,15 +91,14 @@ function print_agent_banner(agentName: string, args: string[]) {
 
 async function handle_unknown_command(cmd: string): Promise<number> {
     const adapter = get_adapter(cmd);
-    const hasInstallInfo = Object.hasOwn(AGENT_INSTALL_INFO, cmd);
-    const installInfo = hasInstallInfo ? AGENT_INSTALL_INFO[cmd] : undefined;
-    const executable = adapter ? adapter.command : hasInstallInfo ? cmd : null;
+    const installInfo = AGENT_INSTALL_INFO[cmd];
+    const executable = adapter ? adapter.command : installInfo ? cmd : null;
 
     if (executable) {
         const isInstalled =
             spawnSync('which', [executable]).status === 0 || spawnSync('where', [executable]).status === 0;
 
-        if (!isInstalled && hasInstallInfo) {
+        if (!isInstalled && installInfo) {
             intro(color.bgCyan(color.black(' Swarm CLI ')));
             note(
                 color.yellow(`Command '${cmd}' is not a built-in tool, but it matches a known agent CLI.`),
