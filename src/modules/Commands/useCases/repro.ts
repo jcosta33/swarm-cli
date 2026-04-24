@@ -4,13 +4,13 @@ import { spawnSync } from 'child_process';
 import { red, cyan, bold, dim, green, yellow } from '../../Terminal/index.ts';
 import { get_repo_root } from '../../Workspace/index.ts';
 
-function run() {
+function run(): number {
     let repoRoot;
     try {
         repoRoot = get_repo_root();
     } catch (_e) {
         console.error(red('Error: Not inside a git repository.'));
-        process.exit(1);
+        return 1;
     }
 
     console.log(cyan(`\nEnforcing Test-Driven Auto-Repro...\n`));
@@ -19,7 +19,7 @@ function run() {
     const res = spawnSync('git', ['diff', 'HEAD', '--name-only'], { cwd: repoRoot, encoding: 'utf8' });
     if (res.status !== 0) {
         console.error(red('Failed to run git diff.'));
-        process.exit(1);
+        return 1;
     }
 
     const modifiedFiles = res.stdout.trim().split('\n').filter(Boolean);
@@ -32,7 +32,7 @@ function run() {
         console.log(yellow(`  You have modified ${String(srcFiles.length)} source file(s), but ZERO test files.`));
         console.log(dim(`  Modified: \n    - ${srcFiles.join('\n    - ')}\n`));
         console.log(bold(`  MANDATE: You MUST write a failing test (.spec.ts) that reproduces the bug before modifying source code.`));
-        process.exit(1);
+        return 1;
     }
 
     if (specFiles.length > 0) {
@@ -42,8 +42,9 @@ function run() {
     }
     
     console.log('');
+    return 0;
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {
-    run();
+    process.exitCode = run();
 }

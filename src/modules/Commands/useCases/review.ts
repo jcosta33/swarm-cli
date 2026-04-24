@@ -9,13 +9,13 @@ import { get_repo_root } from '../../Workspace/index.ts';
 
 const newCommandPath = join(dirname(fileURLToPath(import.meta.url)), 'new.ts');
 
-function run() {
+function run(): number {
     let repoRoot;
     try {
         repoRoot = get_repo_root();
     } catch (_e) {
         console.error(red('Error: Not inside a git repository.'));
-        process.exit(1);
+        return 1;
     }
 
     const { positional } = parse_args(process.argv.slice(2));
@@ -23,7 +23,7 @@ function run() {
     
     if (!targetSlug) {
         console.log(red('Usage: agents:review <slug-to-review>'));
-        process.exit(1);
+        return 1;
     }
 
     console.log(cyan(`\nRequesting Peer Review for: ${bold(targetSlug)}...`));
@@ -33,7 +33,7 @@ function run() {
     const checkBranch = spawnSync('git', ['show-ref', '--verify', '--quiet', `refs/heads/${branchName}`], { cwd: repoRoot });
     if (checkBranch.status !== 0) {
         console.error(red(`Branch ${branchName} does not exist. Cannot review.`));
-        process.exit(1);
+        return 1;
     }
 
     // Launch a new agent targeting that branch as its base
@@ -74,10 +74,11 @@ Review the changes made in \`${targetSlug}\` and ensure they are flawless.
         console.log(green(`\n✓ Reviewer agent launched successfully.`));
     } else {
         console.error(red(`\n✗ Failed to launch reviewer agent.`));
-        process.exit(1);
+        return 1;
     }
+    return 0;
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {
-    run();
+    process.exitCode = run();
 }

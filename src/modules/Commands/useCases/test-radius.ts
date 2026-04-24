@@ -46,14 +46,14 @@ function find_impacted_specs(repoRoot: string, targetFile: unknown) {
     return specs;
 }
 
-function run() {
+function run(): number {
     let repoRoot;
     try {
         repoRoot = get_repo_root();
     } catch (_e: unknown) {
 
         console.error(red('Error: Not inside a git repository.'));
-        process.exit(1);
+        return 1;
     }
 
     const { positional } = parse_args(process.argv.slice(2));
@@ -61,7 +61,7 @@ function run() {
 
     if (!targetFile) {
         console.log(red('Usage: agents:test-radius <path/to/modified/file.ts>'));
-        process.exit(1);
+        return 1;
     }
 
     console.log(cyan(`\nCalculating blast radius for: ${bold(targetFile)}...`));
@@ -69,7 +69,7 @@ function run() {
 
     if (impactedSpecs.length === 0) {
         console.log(yellow(`No impacted spec files found. Blast radius is isolated.`));
-        process.exit(0);
+        return 0;
     }
 
     console.log(green(`Found ${String(impactedSpecs.length)} impacted spec file(s). Running subset...`));
@@ -80,9 +80,9 @@ function run() {
         stdio: 'inherit',
         cwd: repoRoot,
     });
-    process.exit(res.status ?? 0);
+    return res.status ?? 0;
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {
-    run();
+    process.exitCode = run();
 }

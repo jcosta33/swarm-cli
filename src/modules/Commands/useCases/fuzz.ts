@@ -5,13 +5,13 @@ import { join, basename } from 'path';
 import { red, cyan, bold, dim, green, parse_args } from '../../Terminal/index.ts';
 import { get_repo_root } from '../../Workspace/index.ts';
 
-function run() {
+function run(): number {
     let repoRoot;
     try {
         repoRoot = get_repo_root();
     } catch (_e) {
         console.error(red('Error: Not inside a git repository.'));
-        process.exit(1);
+        return 1;
     }
 
     const { positional } = parse_args(process.argv.slice(2));
@@ -20,13 +20,13 @@ function run() {
     
     if (!targetFile || !targetFunc) {
         console.log(red('Usage: agents:fuzz <file> <functionName>'));
-        process.exit(1);
+        return 1;
     }
 
     const fullPath = join(repoRoot, targetFile);
     if (!existsSync(fullPath)) {
         console.error(red(`File not found: ${targetFile}`));
-        process.exit(1);
+        return 1;
     }
 
     console.log(cyan(`\nGenerating Auto-Fuzzer Suite for ${bold(targetFunc)}...\n`));
@@ -34,7 +34,7 @@ function run() {
     const content = readFileSync(fullPath, 'utf8');
     if (!content.includes(targetFunc)) {
         console.log(red(`Function ${targetFunc} not found in ${targetFile}.`));
-        process.exit(1);
+        return 1;
     }
 
     const testDir = join(repoRoot, targetFile.substring(0, targetFile.lastIndexOf('/')), '__tests__');
@@ -77,8 +77,9 @@ describe('${targetFunc} Fuzzer', () => {
     console.log(green(`✓ Fuzzer suite created: ${specFile.replace(repoRoot + '/', '')}`));
     console.log(dim(`Run 'pnpm vitest ${basename(specFile)}' to execute the chaos suite.`));
     console.log('');
+    return 0;
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {
-    run();
+    process.exitCode = run();
 }

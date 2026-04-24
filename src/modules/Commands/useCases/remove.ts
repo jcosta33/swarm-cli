@@ -16,13 +16,13 @@ import {
     worktree_remove,
 } from '../../Workspace/index.ts';
 
-function run() {
+function run(): number {
     let repoRoot: string;
     try {
         repoRoot = get_repo_root();
     } catch (_e: unknown) {
         console.error(red('Error: Not inside a git repository.'));
-        process.exit(1);
+        return 1;
     }
 
     const { flags, positional } = parse_args(process.argv.slice(2));
@@ -31,7 +31,7 @@ function run() {
 
     if (!slug) {
         console.log(red('Usage: swarm remove <slug> [--force]'));
-        process.exit(1);
+        return 1;
     }
 
     const sandboxes = worktree_list(repoRoot);
@@ -39,7 +39,7 @@ function run() {
 
     if (!match) {
         console.error(red(`No sandbox found for slug "${slug}".`));
-        process.exit(1);
+        return 1;
     }
 
     console.log(
@@ -54,7 +54,7 @@ function run() {
         console.log(
             red(`This is destructive. Use --force to confirm.`)
         );
-        process.exit(1);
+        return 1;
     }
 
     try {
@@ -63,7 +63,7 @@ function run() {
     } catch (_e: unknown) {
         const e = _e instanceof Error ? _e : new Error(String(_e));
         console.error(red(`Failed to remove worktree: ${e.message}`));
-        process.exit(1);
+        return 1;
     }
 
     try {
@@ -76,8 +76,9 @@ function run() {
 
     remove_state(repoRoot, slug);
     console.log(green(`✓ State cleared for "${bold(slug)}".`));
+    return 0;
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {
-    run();
+    process.exitCode = run();
 }

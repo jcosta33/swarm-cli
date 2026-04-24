@@ -10,13 +10,13 @@ import { get_repo_root, worktree_list } from '../../Workspace/index.ts';
 
 import { spawnSync } from 'child_process';
 
-function run() {
+function run(): number {
     let repoRoot: string;
     try {
         repoRoot = get_repo_root();
     } catch (_e: unknown) {
         console.error(red('Error: Not inside a git repository.'));
-        process.exit(1);
+        return 1;
     }
 
     const { positional } = parse_args(process.argv.slice(2));
@@ -29,25 +29,25 @@ function run() {
 
     if (items.length === 0) {
         console.log(yellow('No sandboxes found.'));
-        process.exit(0);
+        return 0;
     }
 
     const selected = fzf_select(items);
     if (!selected) {
         console.log(red('No selection made.'));
-        process.exit(1);
+        return 1;
     }
 
     const slug = Array.isArray(selected) ? selected[0] : selected;
     if (!slug) {
         console.log(red('No selection made.'));
-        process.exit(1);
+        return 1;
     }
 
     const validActions = ['new', 'open', 'focus', 'remove', 'show'];
     if (!validActions.includes(action)) {
         console.error(red(`Unknown action: ${action}. Valid: ${validActions.join(', ')}`));
-        process.exit(1);
+        return 1;
     }
 
     const res = spawnSync(
@@ -61,11 +61,12 @@ function run() {
 
     if (res.signal) {
         process.kill(process.pid, res.signal);
+        return 1;
     } else {
-        process.exit(res.status ?? 1);
+        return res.status ?? 1;
     }
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {
-    run();
+    process.exitCode = run();
 }

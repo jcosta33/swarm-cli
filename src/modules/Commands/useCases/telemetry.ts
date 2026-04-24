@@ -5,13 +5,13 @@ import { join } from 'path';
 import { red, cyan, bold, dim, green, yellow } from '../../Terminal/index.ts';
 import { get_repo_root } from '../../Workspace/index.ts';
 
-function run() {
+function run(): number {
     let repoRoot;
     try {
         repoRoot = get_repo_root();
     } catch (_e) {
         console.error(red('Error: Not inside a git repository.'));
-        process.exit(1);
+        return 1;
     }
 
     console.log(cyan(`\n📊 Swarm Telemetry Dashboard\n`));
@@ -19,7 +19,7 @@ function run() {
     const statePath = join(repoRoot, '.agents', 'state.json');
     if (!existsSync(statePath)) {
         console.log(yellow(`No swarm telemetry data available. (.agents/state.json not found)`));
-        process.exit(0);
+        return 0;
     }
 
     const state: Record<string, unknown> = JSON.parse(readFileSync(statePath, 'utf8')) as Record<string, unknown>;
@@ -27,7 +27,7 @@ function run() {
 
     if (slugs.length === 0) {
         console.log(dim(`Swarm is currently idle and has no historical data.`));
-        process.exit(0);
+        return 0;
     }
 
     interface AgentInfo { status?: string; backend?: string; agent?: string; }
@@ -66,8 +66,9 @@ function run() {
     });
 
     console.log('');
+    return 0;
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {
-    run();
+    process.exitCode = run();
 }

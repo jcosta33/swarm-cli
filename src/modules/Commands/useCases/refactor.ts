@@ -24,13 +24,13 @@ function findFiles(dir: string): string[] {
     return results;
 }
 
-function run() {
+function run(): number {
     let repoRoot;
     try {
         repoRoot = get_repo_root();
     } catch (_e) {
         console.error(red('Error: Not inside a git repository.'));
-        process.exit(1);
+        return 1;
     }
 
     const { positional, flags } = parse_args(process.argv.slice(2));
@@ -40,13 +40,13 @@ function run() {
     if (!targetDir || !goal) {
         console.log(red('Usage: agents:refactor <directory> <goal>'));
         console.log(dim('Example: agents:refactor src/modules "Move all inline GraphQL to Repositories"'));
-        process.exit(1);
+        return 1;
     }
 
     const fullPath = join(repoRoot, targetDir);
     if (!existsSync(fullPath)) {
         console.error(red(`Directory not found: ${targetDir}`));
-        process.exit(1);
+        return 1;
     }
 
     console.log(cyan(`\nOrchestrating Large-Scale Refactor...\n`));
@@ -56,7 +56,7 @@ function run() {
     const files = findFiles(fullPath);
     if (files.length === 0) {
         console.log(yellow(`No source files found in ${targetDir}.`));
-        process.exit(0);
+        return 0;
     }
 
     console.log(`Found ${bold(String(files.length))} files. Chunking into bisectable tasks...`);
@@ -111,8 +111,9 @@ ${relativeFiles.map(f => `- ${f}`).join('\n')}
     console.log(cyan(`\nRefactor split into ${String(chunks.length)} tasks. Ready for worker agents.`));
     console.log(dim(`Use 'swarm new <slug>' to start processing.`));
     console.log('');
+    return 0;
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {
-    run();
+    process.exitCode = run();
 }

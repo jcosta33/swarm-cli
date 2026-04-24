@@ -5,13 +5,13 @@ import { join } from 'path';
 import { red, cyan, bold, dim, yellow, parse_args } from '../../Terminal/index.ts';
 import { get_repo_root } from '../../Workspace/index.ts';
 
-function run() {
+function run(): number {
     let repoRoot;
     try {
         repoRoot = get_repo_root();
     } catch (_e) {
         console.error(red('Error: Not inside a git repository.'));
-        process.exit(1);
+        return 1;
     }
 
     // Determine current agent slug from the path or environment
@@ -29,7 +29,7 @@ function run() {
 
     if (!targetSlug) {
         console.log(red('Usage: agents:chat <target-slug> [--message "your message"]'));
-        process.exit(1);
+        return 1;
     }
 
     const ipcDir = join(repoRoot, '.agents', 'ipc'); // put it in the host repo
@@ -49,14 +49,15 @@ function run() {
         // Read mode
         if (!existsSync(chatFile)) {
             console.log(yellow(`No active IPC channel between ${mySlug} and ${targetSlug}.`));
-            process.exit(0);
+            return 0;
         }
         console.log(cyan(`\n--- IPC Log: ${bold(participants[0])} <-> ${bold(participants[1])} ---\n`));
         console.log(readFileSync(chatFile, 'utf8'));
         console.log(dim('--- End of Log ---\n'));
     }
+    return 0;
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {
-    run();
+    process.exitCode = run();
 }

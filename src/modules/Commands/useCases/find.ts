@@ -5,14 +5,14 @@ import { get_repo_root } from '../../Workspace/index.ts';
 
 import { spawnSync } from 'child_process';
 
-function run() {
+function run(): number {
     let repoRoot;
     try {
         repoRoot = get_repo_root();
     } catch (_e: unknown) {
 
         console.error(red('Error: Not inside a git repository.'));
-        process.exit(1);
+        return 1;
     }
 
     const { positional } = parse_args(process.argv.slice(2));
@@ -23,7 +23,7 @@ function run() {
         console.log(red('Usage: agents:find <type> <target>'));
         console.log(dim('Types: class, interface, function, implements, extends'));
         console.log(dim('Example: agents:find implements TransportHandler'));
-        process.exit(1);
+        return 1;
     }
 
     console.log(cyan(`\nSemantic Search: ${bold(queryType)} ${bold(queryTarget)}...\n`));
@@ -33,7 +33,7 @@ function run() {
     }
 
     const target = escape_regex(queryTarget);
-    let regex = '';
+    let regex: string;
     switch (queryType) {
         case 'class':
             regex = `class\\s+${target}\\b`;
@@ -52,7 +52,7 @@ function run() {
             break;
         default:
             console.error(red(`Unknown query type: ${queryType}`));
-            process.exit(1);
+            return 1;
     }
 
     const res = spawnSync('git', ['grep', '-n', '-E', regex], { cwd: repoRoot, encoding: 'utf8' });
@@ -72,8 +72,9 @@ function run() {
     }
 
     console.log('');
+    return 0;
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {
-    run();
+    process.exitCode = run();
 }

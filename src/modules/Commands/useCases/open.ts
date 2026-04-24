@@ -44,6 +44,7 @@ function run(): number {
     console.log(cyan(`Opening ${bold(slug)}...`));
 
     return run_agent_launch({ repoRoot, slug, worktreePath: matchPath, agent });
+    return 0;
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {

@@ -18,13 +18,13 @@ import {
     worktree_remove,
 } from '../../Workspace/index.ts';
 
-function run() {
+function run(): number {
     let repoRoot: string;
     try {
         repoRoot = get_repo_root();
     } catch (_e: unknown) {
         console.error(red('Error: Not inside a git repository.'));
-        process.exit(1);
+        return 1;
     }
 
     const config = load_config(repoRoot);
@@ -74,8 +74,9 @@ function run() {
     } else {
         console.log(green(`\nPruned ${removedCount.toString()} sandbox(es).`));
     }
+    return 0;
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {
-    run();
+    process.exitCode = run();
 }

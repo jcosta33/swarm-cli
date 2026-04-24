@@ -10,13 +10,13 @@ import {
 import { is_process_running, read_state } from '../../AgentState/index.ts';
 import { get_repo_root, is_worktree_dirty, get_status_summary, worktree_list } from '../../Workspace/index.ts';
 
-function run() {
+function run(): number {
     let repoRoot: string;
     try {
         repoRoot = get_repo_root();
     } catch (_e: unknown) {
         console.error(red('Error: Not inside a git repository.'));
-        process.exit(1);
+        return 1;
     }
 
     const { positional } = parse_args(process.argv.slice(2));
@@ -24,7 +24,7 @@ function run() {
 
     if (!slug) {
         console.log(red('Usage: swarm show <slug>'));
-        process.exit(1);
+        return 1;
     }
 
     const sandboxes = worktree_list(repoRoot);
@@ -33,7 +33,7 @@ function run() {
 
     if (!match) {
         console.error(red(`No sandbox found for slug "${slug}".`));
-        process.exit(1);
+        return 1;
     }
 
     const state = globalState[slug] ?? {};
@@ -57,8 +57,9 @@ function run() {
     if (state.lastUpdated) lines.push(`  Updated:   ${state.lastUpdated}`);
 
     box(`Sandbox Details: ${slug}`, lines);
+    return 0;
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {
-    run();
+    process.exitCode = run();
 }

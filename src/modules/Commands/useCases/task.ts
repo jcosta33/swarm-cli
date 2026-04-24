@@ -11,13 +11,13 @@ import { get_repo_root } from '../../Workspace/index.ts';
 import { appendFileSync, existsSync } from 'fs';
 import { join } from 'path';
 
-async function run() {
+async function run(): Promise<number> {
     let repoRoot: string;
     try {
         repoRoot = get_repo_root();
     } catch (_e: unknown) {
         console.error(red('Error: Not inside a git repository.'));
-        process.exit(1);
+        return 1;
     }
 
     const { positional } = parse_args(process.argv.slice(2));
@@ -25,19 +25,19 @@ async function run() {
 
     if (!slug) {
         console.log(red('Usage: swarm task <slug>'));
-        process.exit(1);
+        return 1;
     }
 
     const taskFile = join(repoRoot, '.agents', 'tasks', `${slug}.md`);
     if (!existsSync(taskFile)) {
         console.error(red(`Task file not found: ${taskFile}`));
-        process.exit(1);
+        return 1;
     }
 
     const note = await prompt_input('Human note / feedback to append: ');
     if (!note) {
         console.log(red('No note provided. Aborting.'));
-        process.exit(1);
+        return 1;
     }
 
     const timestamp = new Date().toISOString();
@@ -45,8 +45,11 @@ async function run() {
     appendFileSync(taskFile, entry, 'utf8');
 
     console.log(green(`✓ Note appended to ${slug}.md`));
+    return 0;
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {
-    void run();
+    void run().then((code) => {
+        process.exitCode = code;
+    });
 }

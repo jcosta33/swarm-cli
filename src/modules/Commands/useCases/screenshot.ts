@@ -6,13 +6,13 @@ import { red, green, cyan, bold, dim, parse_args } from '../../Terminal/index.ts
 import { get_repo_root } from '../../Workspace/index.ts';
 import { existsSync, mkdirSync } from 'fs';
 
-function run() {
+function run(): number {
     let repoRoot;
     try {
         repoRoot = get_repo_root();
     } catch (_e) {
         console.error(red('Error: Not inside a git repository.'));
-        process.exit(1);
+        return 1;
     }
 
     const { positional } = parse_args(process.argv.slice(2));
@@ -38,8 +38,9 @@ function run() {
     } else {
         console.log(red(`\n✗ Screenshot capture failed.`));
     }
+    return 0;
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {
-    run();
+    process.exitCode = run();
 }

@@ -9,13 +9,13 @@ import { get_repo_root } from '../../Workspace/index.ts';
 
 const newCommandPath = join(dirname(fileURLToPath(import.meta.url)), 'new.ts');
 
-function run() {
+function run(): number {
     let repoRoot;
     try {
         repoRoot = get_repo_root();
     } catch (_e) {
         console.error(red('Error: Not inside a git repository.'));
-        process.exit(1);
+        return 1;
     }
 
     const { positional } = parse_args(process.argv.slice(2));
@@ -24,13 +24,13 @@ function run() {
     
     if (!targetFile) {
         console.log(red('Usage: agents:migrate <file> [TargetLanguage]'));
-        process.exit(1);
+        return 1;
     }
 
     const fullPath = join(repoRoot, targetFile);
     if (!existsSync(fullPath)) {
         console.error(red(`File not found: ${targetFile}`));
-        process.exit(1);
+        return 1;
     }
 
     console.log(cyan(`\nInitializing Framework Translation Protocol...\n`));
@@ -72,8 +72,9 @@ Wait for \`${translatorSlug}\` to finish. Run the test suite against the new ${t
     console.log(cyan(`\nSpawning Translator Agent...`));
     spawnSync(process.execPath, ['--experimental-strip-types', newCommandPath, translatorSlug, '--type', 'feature'], { stdio: 'inherit', cwd: repoRoot });
 
+    return 0;
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {
-    run();
+    process.exitCode = run();
 }

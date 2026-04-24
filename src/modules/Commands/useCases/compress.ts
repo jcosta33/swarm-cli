@@ -47,13 +47,13 @@ function skeletonize(content: string) {
     return skeleton.join('\n');
 }
 
-function run() {
+function run(): number {
     let repoRoot;
     try {
         repoRoot = get_repo_root();
     } catch (_e) {
         console.error(red('Error: Not inside a git repository.'));
-        process.exit(1);
+        return 1;
     }
 
     const { positional } = parse_args(process.argv.slice(2));
@@ -61,13 +61,13 @@ function run() {
     
     if (!targetFile) {
         console.log(red('Usage: agents:compress <path/to/file.ts>'));
-        process.exit(1);
+        return 1;
     }
 
     const fullPath = join(repoRoot, targetFile);
     if (!existsSync(fullPath)) {
         console.error(red(`File not found: ${targetFile}`));
-        process.exit(1);
+        return 1;
     }
 
     const content = readFileSync(fullPath, 'utf8');
@@ -80,8 +80,9 @@ function run() {
     console.log(dim('--- SKELETON START ---'));
     console.log(compressed);
     console.log(dim('--- SKELETON END ---\n'));
+    return 0;
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {
-    run();
+    process.exitCode = run();
 }

@@ -25,13 +25,13 @@ function format_status(state: { status?: string; pid?: number; backend?: string 
     return yellow(`[${state.status.toUpperCase()}]`);
 }
 
-function run() {
+function run(): number {
     let repoRoot: string;
     try {
         repoRoot = get_repo_root();
     } catch (_e: unknown) {
         console.error(red('Error: Not inside a git repository.'));
-        process.exit(1);
+        return 1;
     }
 
     const sandboxes = worktree_list(repoRoot);
@@ -42,7 +42,7 @@ function run() {
 
     if (sandboxes.length === 0 && allBranches.length === 0) {
         console.log(dim('No active sandboxes found.'));
-        process.exit(0);
+        return 0;
     }
 
     sandboxes.forEach((s) => {
@@ -70,8 +70,9 @@ function run() {
     }
 
     console.log('');
+    return 0;
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {
-    run();
+    process.exitCode = run();
 }

@@ -8,13 +8,13 @@ import { get_repo_root } from '../../Workspace/index.ts';
 
 const newCommandPath = join(dirname(fileURLToPath(import.meta.url)), 'new.ts');
 
-function run() {
+function run(): number {
     let repoRoot;
     try {
         repoRoot = get_repo_root();
     } catch (_e) {
         console.error(red('Error: Not inside a git repository.'));
-        process.exit(1);
+        return 1;
     }
 
     console.log(cyan(`\nChecking branch health...`));
@@ -25,7 +25,7 @@ function run() {
 
     if (typecheck.status === 0) {
         console.log(green(`✓ Branch is healthy. No healing required.`));
-        process.exit(0);
+        return 0;
     }
 
     console.log(red(`✗ Branch is broken (typecheck failed)!`));
@@ -42,12 +42,13 @@ function run() {
     if (res.status === 0) {
         console.log(green(`\n✓ Heal agent spawned successfully.`));
         console.log(dim(`The agent should now fix the type errors and run agents:pr`));
+        return 0;
     } else {
         console.log(red(`\n✗ Failed to spawn heal agent.`));
-        process.exit(1);
+        return 1;
     }
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {
-    run();
+    process.exitCode = run();
 }

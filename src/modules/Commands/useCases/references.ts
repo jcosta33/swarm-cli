@@ -4,13 +4,13 @@ import { spawnSync } from 'child_process';
 import { red, cyan, bold, dim, parse_args } from '../../Terminal/index.ts';
 import { get_repo_root } from '../../Workspace/index.ts';
 
-function run() {
+function run(): number {
     let repoRoot;
     try {
         repoRoot = get_repo_root();
     } catch (_e) {
         console.error(red('Error: Not inside a git repository.'));
-        process.exit(1);
+        return 1;
     }
 
     const { positional, flags } = parse_args(process.argv.slice(2));
@@ -19,18 +19,18 @@ function run() {
     
     if (!symbol) {
         console.log(red('Usage: agents:references <symbol> [--path <dir>]'));
-        process.exit(1);
+        return 1;
     }
 
     console.log(cyan(`\nScanning for references to ${bold(symbol)} in ${bold(pathFilter)}...\n`));
 
     // Use git grep for lightning fast indexed search
     const res = spawnSync('git', ['grep', '-n', symbol, '--', pathFilter], { cwd: repoRoot, encoding: 'utf8' });
-    if (!symbol) { process.exit(0); }
+    if (!symbol) { return 0; }
 
     if (res.status !== 0 || !res.stdout) {
         console.log(dim(`  No references found for "${symbol}".`));
-        process.exit(0);
+        return 0;
     }
 
     const lines = res.stdout.split('\n').filter(Boolean);
@@ -55,8 +55,9 @@ function run() {
         }
     }
     console.log('');
+    return 0;
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {
-    run();
+    process.exitCode = run();
 }

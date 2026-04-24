@@ -9,13 +9,13 @@ import { get_repo_root } from '../../Workspace/index.ts';
 
 const newCommandPath = join(dirname(fileURLToPath(import.meta.url)), 'new.ts');
 
-function run() {
+function run(): number {
     let repoRoot;
     try {
         repoRoot = get_repo_root();
     } catch (_e) {
         console.error(red('Error: Not inside a git repository.'));
-        process.exit(1);
+        return 1;
     }
 
     const { positional } = parse_args(process.argv.slice(2));
@@ -24,7 +24,7 @@ function run() {
     if (!commandToProfile) {
         console.log(red('Usage: agents:profile <command>'));
         console.log(dim('Example: agents:profile "pnpm test"'));
-        process.exit(1);
+        return 1;
     }
 
     console.log(cyan(`\nRunning Auto-Profiler on: ${bold(commandToProfile)}...\n`));
@@ -40,7 +40,7 @@ function run() {
 
     if (res.status !== 0) {
         console.log(red(`✗ Command failed during profiling.`));
-        process.exit(1);
+        return 1;
     }
 
     console.log(green(`✓ Profiling complete.`));
@@ -78,8 +78,9 @@ Maintain all existing behavioral tests. Do NOT break the audio transport thread.
     spawnSync(process.execPath, ['--experimental-strip-types', newCommandPath, slug, '--type', 'refactor'], { stdio: 'inherit', cwd: repoRoot });
 
     console.log('');
+    return 0;
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {
-    run();
+    process.exitCode = run();
 }

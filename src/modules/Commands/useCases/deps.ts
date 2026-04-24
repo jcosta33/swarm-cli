@@ -12,13 +12,13 @@ interface OutdatedInfo {
     latest?: string;
 }
 
-function run() {
+function run(): number {
     let repoRoot: string;
     try {
         repoRoot = get_repo_root();
     } catch (_e: unknown) {
         console.error(red('Error: Not inside a git repository.'));
-        process.exit(1);
+        return 1;
     }
 
     console.log(cyan('\nChecking for outdated dependencies...\n'));
@@ -26,7 +26,7 @@ function run() {
     const pkgPath = join(repoRoot, 'package.json');
     if (!existsSync(pkgPath)) {
         console.error(red('No package.json found.'));
-        process.exit(1);
+        return 1;
     }
 
     const res = spawnSync(
@@ -44,13 +44,13 @@ function run() {
                 'Failed to parse npm outdated output. Make sure dependencies are installed.'
             )
         );
-        process.exit(1);
+        return 1;
     }
 
     const packages = Object.keys(outdated);
     if (packages.length === 0) {
         console.log(green('✓ All dependencies are up to date.'));
-        process.exit(0);
+        return 0;
     }
 
     console.log(yellow(`Found ${packages.length.toString()} outdated packages.`));
@@ -101,8 +101,9 @@ Intelligently upgrade \`${pkg}\` from \`${info.current ?? 'unknown'}\` to \`${in
 
     console.log(cyan(`\nDelegated to ${packages.length.toString()} separate upgrade tasks.`));
     console.log('');
+    return 0;
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {
-    run();
+    process.exitCode = run();
 }

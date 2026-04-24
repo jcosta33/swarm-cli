@@ -5,13 +5,13 @@ import { join } from 'path';
 import { red, cyan, dim, green, yellow, parse_args } from '../../Terminal/index.ts';
 import { get_repo_root } from '../../Workspace/index.ts';
 
-function run() {
+function run(): number {
     let repoRoot;
     try {
         repoRoot = get_repo_root();
     } catch (_e) {
         console.error(red('Error: Not inside a git repository.'));
-        process.exit(1);
+        return 1;
     }
 
     const { positional, flags } = parse_args(process.argv.slice(2));
@@ -49,11 +49,12 @@ function run() {
         console.log(dim(`Development environment returned to normal.`));
     } else {
         console.log(red('Usage: agents:chaos <start|stop> [--delay 2000] [--fail-rate 0.2]'));
-        process.exit(1);
+        return 1;
     }
     console.log('');
+    return 0;
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {
-    run();
+    process.exitCode = run();
 }

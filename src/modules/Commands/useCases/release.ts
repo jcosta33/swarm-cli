@@ -7,14 +7,14 @@ import { spawnSync } from 'child_process';
 import { existsSync, mkdirSync, writeFileSync } from 'fs';
 import { join } from 'path';
 
-function run() {
+function run(): number {
     let repoRoot;
     try {
         repoRoot = get_repo_root();
     } catch (_e: unknown) {
 
         console.error(red('Error: Not inside a git repository.'));
-        process.exit(1);
+        return 1;
     }
 
     console.log(cyan(`\nOrchestrating Automated Release...\n`));
@@ -34,13 +34,13 @@ function run() {
     const logRes = spawnSync('git', logArgs, { cwd: repoRoot, encoding: 'utf8' });
     if (logRes.status !== 0) {
         console.error(red(`Failed to read git log.`));
-        process.exit(1);
+        return 1;
     }
 
     const commits = logRes.stdout.trim().split('\n').filter(Boolean);
     if (commits.length === 0) {
         console.log(yellow(`No new commits since ${String(lastTag)}. Nothing to release.`));
-        process.exit(0);
+        return 0;
     }
 
     console.log(green(`✓ Analyzed ${String(commits.length)} commits.`));
@@ -101,8 +101,9 @@ ${commits.map((c) => `- ${c}`).join('\n')}
     console.log(dim(`git tag ${nextVer}`));
     console.log(dim(`git push origin ${nextVer}`));
     console.log('');
+    return 0;
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {
-    run();
+    process.exitCode = run();
 }

@@ -60,7 +60,7 @@ function run(): number {
         process.on('SIGINT', () => {
             clearInterval(interval);
             console.log('');
-            process.exit(0);
+            return 0;
         });
         return 0;
     }

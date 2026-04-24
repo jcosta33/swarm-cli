@@ -6,13 +6,13 @@ import { spawnSync } from 'child_process';
 import { red, cyan, bold, dim, green, yellow, parse_args } from '../../Terminal/index.ts';
 import { get_repo_root } from '../../Workspace/index.ts';
 
-function run() {
+function run(): number {
     let repoRoot;
     try {
         repoRoot = get_repo_root();
     } catch (_e) {
         console.error(red('Error: Not inside a git repository.'));
-        process.exit(1);
+        return 1;
     }
 
     const { positional } = parse_args(process.argv.slice(2));
@@ -21,7 +21,7 @@ function run() {
     
     if (!command || !['baseline', 'compare'].includes(command)) {
         console.log(red('Usage: agents:visual <baseline|compare> [url]'));
-        process.exit(1);
+        return 1;
     }
 
     const screenshotsDir = join(repoRoot, '.agents', 'visual');
@@ -37,7 +37,7 @@ function run() {
 
     if (res.status !== 0) {
         console.error(red(`Failed to capture screenshot.`));
-        process.exit(1);
+        return 1;
     }
 
     if (command === 'baseline') {
@@ -46,7 +46,7 @@ function run() {
         const baseline = join(screenshotsDir, 'baseline.png');
         if (!existsSync(baseline)) {
             console.error(red(`No baseline found. Run 'agents:visual baseline' first.`));
-            process.exit(1);
+            return 1;
         }
         console.log(green(`✓ Compare screenshot saved to .agents/visual/compare.png`));
         
@@ -57,8 +57,9 @@ function run() {
     }
 
     console.log('');
+    return 0;
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {
-    run();
+    process.exitCode = run();
 }

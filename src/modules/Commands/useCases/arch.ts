@@ -24,13 +24,13 @@ function findFiles(dir: string): string[] {
     return results;
 }
 
-function run() {
+function run(): number {
     let repoRoot;
     try {
         repoRoot = get_repo_root();
     } catch (_e) {
         console.error(red('Error: Not inside a git repository.'));
-        process.exit(1);
+        return 1;
     }
 
     console.log(cyan(`\nEnforcing Architectural Boundaries (AGENTS.md)...\n`));
@@ -76,10 +76,11 @@ function run() {
         console.log(green(`✓ Zero cross-module boundary violations found.`));
     } else {
         console.log(red(`\nFound ${String(violations)} architectural boundary violations. Agent must fix these before PR.`));
-        process.exit(1);
+        return 1;
     }
+    return 0;
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {
-    run();
+    process.exitCode = run();
 }

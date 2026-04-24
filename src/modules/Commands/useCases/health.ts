@@ -22,7 +22,7 @@ function check_command(cmd: string, args: string[]): CommandCheck {
     };
 }
 
-function run() {
+function run(): number {
     console.log(cyan('\n🩺 Swarm Health Check\n'));
 
     let repoRoot: string;
@@ -31,7 +31,7 @@ function run() {
         console.log(green('✓ Git Workspace:'), dim(repoRoot));
     } catch (_e: unknown) {
         console.log(red('✗ Git Workspace:'), 'Not a git repository.');
-        process.exit(1);
+        return 1;
     }
 
     const nodeCheck = check_command('node', ['-v']);
@@ -67,8 +67,9 @@ function run() {
     }
 
     console.log(cyan('\nAll pre-flight checks complete.\n'));
+    return 0;
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {
-    run();
+    process.exitCode = run();
 }

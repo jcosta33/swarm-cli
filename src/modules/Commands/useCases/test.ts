@@ -59,7 +59,7 @@ function run_test(args: string[]) {
     } catch (_e: unknown) {
 
         console.error(red('Error: Not inside a git repository.'));
-        process.exit(1);
+        return 1;
     }
 
     let pnpmArgs = ['run', 'test', '--run']; // --run disables watch mode for vitest
@@ -70,9 +70,9 @@ function run_test(args: string[]) {
     }
 
     const passed = run_and_truncate('pnpm', pnpmArgs, repoRoot);
-    process.exit(passed ? 0 : 1);
+    return passed ? 0 : 1;
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {
-    run_test(process.argv.slice(2));
+    process.exitCode = run_test(process.argv.slice(2));
 }

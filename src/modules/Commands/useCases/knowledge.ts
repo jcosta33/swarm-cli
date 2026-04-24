@@ -7,14 +7,14 @@ import { get_repo_root } from '../../Workspace/index.ts';
 import { existsSync, readFileSync } from 'fs';
 import { join } from 'path';
 
-function run() {
+function run(): number {
     let repoRoot;
     try {
         repoRoot = get_repo_root();
     } catch (_e: unknown) {
 
         console.error(red('Error: Not inside a git repository.'));
-        process.exit(1);
+        return 1;
     }
 
     const { positional } = parse_args(process.argv.slice(2));
@@ -23,7 +23,7 @@ function run() {
     if (!query) {
         console.log(red('Usage: agents:knowledge <query>'));
         console.log(dim('Example: agents:knowledge "audio buffer underrun fix"'));
-        process.exit(1);
+        return 1;
     }
 
     console.log(cyan(`\nQuerying Vector Knowledge Graph...\n`));
@@ -85,8 +85,9 @@ function run() {
     }
 
     console.log('');
+    return 0;
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {
-    run();
+    process.exitCode = run();
 }

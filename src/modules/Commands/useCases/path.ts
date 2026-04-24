@@ -9,13 +9,13 @@ import {
     worktree_list,
 } from '../../Workspace/index.ts';
 
-function run() {
+function run(): number {
     let repoRoot: string;
     try {
         repoRoot = get_repo_root();
     } catch (_e: unknown) {
         console.error(red('Error: Not inside a git repository.'));
-        process.exit(1);
+        return 1;
     }
 
     const { positional } = parse_args(process.argv.slice(2));
@@ -23,7 +23,7 @@ function run() {
 
     if (!slug) {
         console.log(red('Usage: swarm path <slug>'));
-        process.exit(1);
+        return 1;
     }
 
     const sandboxes = worktree_list(repoRoot);
@@ -31,12 +31,13 @@ function run() {
 
     if (!match) {
         console.error(red(`No sandbox found for slug "${slug}".`));
-        process.exit(1);
+        return 1;
     }
 
     console.log(match.path);
+    return 0;
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {
-    run();
+    process.exitCode = run();
 }

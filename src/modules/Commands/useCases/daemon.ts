@@ -6,13 +6,13 @@ import { join } from 'path';
 import { red, cyan, dim, yellow } from '../../Terminal/index.ts';
 import { get_repo_root } from '../../Workspace/index.ts';
 
-function run() {
+function run(): number {
     let repoRoot;
     try {
         repoRoot = get_repo_root();
     } catch (_e) {
         console.error(red('Error: Not inside a git repository.'));
-        process.exit(1);
+        return 1;
     }
 
     console.log(cyan(`\nStarting Swarm Daemon (Background Watcher)...\n`));
@@ -53,8 +53,9 @@ function run() {
 
         }, 1000);
     });
+    return 0;
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {
-    run();
+    process.exitCode = run();
 }

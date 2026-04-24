@@ -12,13 +12,13 @@ function findWorktreePath(slug: string, repoRoot: string) {
     return match ? match.path : null;
 }
 
-function run() {
+function run(): number {
     let repoRoot;
     try {
         repoRoot = get_repo_root();
     } catch (_e) {
         console.error(red('Error: Not inside a git repository.'));
-        process.exit(1);
+        return 1;
     }
 
     const { positional } = parse_args(process.argv.slice(2));
@@ -26,19 +26,19 @@ function run() {
     
     if (!slug) {
         console.log(red('Usage: agents:pr <slug>'));
-        process.exit(1);
+        return 1;
     }
 
     const worktreeAbs = findWorktreePath(slug, repoRoot);
     if (!worktreeAbs) {
         console.error(red(`No active worktree found for "${slug}".`));
-        process.exit(1);
+        return 1;
     }
 
     const taskFile = join(worktreeAbs, '.agents', 'tasks', `${slug}.md`);
     if (!existsSync(taskFile)) {
         console.error(red(`Task file not found at ${taskFile}`));
-        process.exit(1);
+        return 1;
     }
 
     // Extract objective as PR title
@@ -62,8 +62,9 @@ function run() {
     } else {
         console.log(yellow(`\n✗ Git commit failed (maybe no changes to commit?).`));
     }
+    return 0;
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {
-    run();
+    process.exitCode = run();
 }
