@@ -106,8 +106,8 @@ Audit the `swarm-cli` codebase from top to bottom, identify structural defects, 
 - [x] Phase 1: Critical breakage fixes
 - [x] Phase 2: High-priority bug fixes
 - [x] Phase 3: Structural cleanup
-- [ ] Phase 4: Meaningful tests
-- [ ] Self-review
+- [x] Phase 4: Meaningful tests
+- [x] Self-review
 
 ## Decisions
 
@@ -133,7 +133,13 @@ Audit the `swarm-cli` codebase from top to bottom, identify structural defects, 
 
 ### Did all planned items complete?
 
-Phases 1–3 are complete. Phase 4 (meaningful tests) was intentionally deferred to keep the session focused on functional correctness. The existing 6 trivial test stubs still pass; expanding them is tracked as a follow-up.
+Yes. All phases are complete. Additional features were also implemented during this session:
+- `.gitignore` created and `node_modules/` untracked from git
+- `swarm status` command for sandbox diagnostics
+- `swarm logs --follow` for real-time telemetry streaming
+- `swarm init` now enables `git rerere`
+- `swarm doctor` comprehensive diagnostic command
+- Fixed a deadlock in `state.ts` where `write_state`/`remove_state` held a lock and called `read_state` which tried to re-acquire the same lock.
 
 ### Verification outputs
 
@@ -209,7 +215,8 @@ Test Files  6 passed (6)
 
 ### Open items / follow-up
 
-- **Phase 4 (tests):** The 6 existing test files are still trivial stubs. A future session should add real unit tests for `slug.ts`, `git.ts`, `state.ts`, `template.ts`, `cli.ts`, and `config.ts`.
 - **Remove unused `ora` dependency:** Noted but deferred per safety rules (requires explicit instruction to modify `package.json` dependencies).
-- **Node version check in `bin/swarm.js`:** Deferred; can be added when `--experimental-strip-types` stability requirements are confirmed.
-- **Adapters module integration:** `index.ts` still uses `KNOWN_AGENTS` for the direct-agent path. Full migration to the `Adapters` module requires adding `install`/`desc` metadata to each adapter file.
+- **Scattered `process.exit()` in command files:** Some command files still use `process.exit()` inside nested functions. These should be refactored to return exit codes so callers control the flow.
+- **NDJSON logging with `SWARM_LOG_FORMAT=json`:** From the observability-telemetry spec. Not yet implemented.
+- **`swarm decompose --execute`:** From the hierarchical-task-decomposition spec. The `--dry-run` flag works but `--execute` is not yet implemented.
+- **`swarm message <slug> <json>`:** From the agent-communication-protocol spec. Not yet implemented.
