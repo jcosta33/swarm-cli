@@ -47,6 +47,24 @@ function get_state_file_path(repoRoot: string) {
 }
 
 /**
+ * Read the state file without acquiring a lock.
+ * Caller must ensure mutual exclusion if needed.
+ */
+function read_state_unlocked(statePath: string): Record<string, AgentState | undefined> {
+    if (!existsSync(statePath)) {
+        return {};
+    }
+    try {
+        const parsed = JSON.parse(readFileSync(statePath, 'utf8')) as unknown;
+        return validate_state(parsed);
+    } catch (_e: unknown) {
+        const e = _e instanceof Error ? _e : new Error(String(_e));
+        console.warn(`Warning: could not read state.json: ${e.message}`);
+        return {};
+    }
+}
+
+/**
  * Read the entire state registry.
  */
 export function read_state(repoRoot: string): Record<string, AgentState | undefined> {
@@ -56,12 +74,7 @@ export function read_state(repoRoot: string): Record<string, AgentState | undefi
     }
     lockSync(statePath, { stale: 5000 });
     try {
-        const parsed = JSON.parse(readFileSync(statePath, 'utf8')) as unknown;
-        return validate_state(parsed);
-    } catch (_e: unknown) {
-        const e = _e instanceof Error ? _e : new Error(String(_e));
-        console.warn(`Warning: could not read state.json: ${e.message}`);
-        return {};
+        return read_state_unlocked(statePath);
     } finally {
         unlockSync(statePath);
     }
@@ -75,7 +88,7 @@ export function write_state(repoRoot: string, slug: string, data: AgentState) {
     const statePath = get_state_file_path(repoRoot);
     lockSync(statePath, { stale: 5000 });
     try {
-        const currentState = read_state(repoRoot);
+        const currentState = read_state_unlocked(statePath);
         currentState[slug] = {
             ...(currentState[slug] ?? {}),
             ...data,
@@ -96,7 +109,7 @@ export function remove_state(repoRoot: string, slug: string) {
     const statePath = get_state_file_path(repoRoot);
     lockSync(statePath, { stale: 5000 });
     try {
-        const currentState = read_state(repoRoot);
+        const currentState = read_state_unlocked(statePath);
         if (currentState[slug] !== undefined) {
             const { [slug]: _removed, ...rest } = currentState;
             void _removed;
