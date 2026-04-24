@@ -5,7 +5,7 @@ import { join } from 'path';
 import { red, cyan, bold, dim, parse_args } from '../../Terminal/index.ts';
 import { get_repo_root } from '../../Workspace/index.ts';
 
-function skeletonize(content: string) {
+export function skeletonize(content: string) {
     const lines = content.split('\n');
     const skeleton = [];
     let inDocBlock = false;
