@@ -1,8 +1,14 @@
 #!/usr/bin/env node
 
-import { existsSync, readFileSync } from 'fs';
-import { parse_args, red, green, dim } from '../../Terminal/index.ts';
-import { get_repo_root } from '../../Workspace/index.ts';
+import { existsSync, mkdirSync } from 'fs';
+import { join, resolve } from 'path';
+import { spawn, type ChildProcess } from 'child_process';
+import { parse_args, red, green, dim, cyan, bold } from '../../Terminal/index.ts';
+import { load_config } from '../../Terminal/index.ts';
+import { get_repo_root, get_repo_name, worktree_create, branch_exists } from '../../Workspace/index.ts';
+import { write_state } from '../../AgentState/index.ts';
+import { create_or_update_task_file, derive_names } from '../../TaskManagement/index.ts';
+import { get_adapter } from '../../Adapters/index.ts';
 import { validate_dag, topological_sort } from '../../TaskManagement/useCases/dag.ts';
 
 interface TaskNode {
@@ -23,6 +29,182 @@ function load_task_graph(path: string): TaskNode[] {
     return obj.tasks as TaskNode[];
 }
 
+import { readFileSync } from 'fs';
+
+function spawn_agent(
+    repoRoot: string,
+    slug: string,
+    worktreePath: string,
+    config: ReturnType<typeof load_config>
+): ChildProcess | null {
+    const agentName = config.defaultAgent ?? 'claude';
+    const agentCfg = config.agents?.[agentName];
+    if (!agentCfg) {
+        console.error(red(`Agent "${agentName}" not configured. Skipping ${slug}.`));
+        return null;
+    }
+
+    const adapter = get_adapter(agentName);
+    const args = adapter
+        ? adapter.build_args(slug, agentCfg.args)
+        : agentCfg.args;
+
+    const child = spawn(agentCfg.command, args, {
+        cwd: worktreePath,
+        detached: true,
+        stdio: 'ignore',
+    });
+
+    if (child.pid) {
+        write_state(repoRoot, slug, {
+            status: 'running',
+            backend: 'decompose-orchestrator',
+            agent: agentName,
+            pid: child.pid,
+        });
+    }
+
+    return child;
+}
+
+function track_child(child: ChildProcess): Promise<number> {
+    return new Promise((resolve) => {
+        child.on('exit', (code, signal) => {
+            resolve(signal ? 1 : (code ?? 1));
+        });
+        child.on('error', () => {
+            resolve(1);
+        });
+    });
+}
+
+async function execute_dag(
+    tasks: TaskNode[],
+    repoRoot: string,
+    parentSlug: string,
+    config: ReturnType<typeof load_config>
+): Promise<number> {
+    const repoName = get_repo_name(repoRoot);
+    const sorted = topological_sort(tasks);
+    const statusMap = new Map<string, 'pending' | 'running' | 'done' | 'failed'>();
+    for (const task of tasks) {
+        statusMap.set(task.id, 'pending');
+    }
+
+    // Pre-create all worktrees and task files
+    for (const task of sorted) {
+        const slug = `${parentSlug}-${task.id}`;
+        const { branch, worktreePath: rawWorktreePath } = derive_names(slug, repoName, config as Record<string, string>);
+        const worktreePath = resolve(repoRoot, rawWorktreePath);
+
+        if (!branch_exists(branch, repoRoot)) {
+            try {
+                worktree_create(worktreePath, branch, config.defaultBaseBranch ?? 'main', repoRoot);
+            } catch (_e: unknown) {
+                const e = _e instanceof Error ? _e : new Error(String(_e));
+                console.error(red(`Failed to create worktree for ${slug}: ${e.message}`));
+                statusMap.set(task.id, 'failed');
+                continue;
+            }
+        }
+
+        const agentsDir = join(worktreePath, '.agents');
+        if (!existsSync(agentsDir)) mkdirSync(agentsDir, { recursive: true });
+        const tasksDir = join(agentsDir, 'tasks');
+        if (!existsSync(tasksDir)) mkdirSync(tasksDir, { recursive: true });
+
+        const taskFilePath = join(tasksDir, `${slug}.md`);
+        const templateDir = join(repoRoot, '.agents', 'templates');
+        const data: Record<string, string> = {
+            title: task.description,
+            slug,
+            agent: config.defaultAgent ?? 'claude',
+            branch,
+            baseBranch: config.defaultBaseBranch ?? 'main',
+            worktreePath,
+            createdAt: new Date().toISOString(),
+            status: 'active',
+            taskFile: `.agents/tasks/${slug}.md`,
+            type: 'decompose',
+        };
+
+        if (config.writeTaskTemplateOnCreate !== false) {
+            create_or_update_task_file(taskFilePath, templateDir, data);
+        }
+    }
+
+    console.log(cyan(`\nExecuting ${bold(String(tasks.length))} tasks in dependency waves...\n`));
+
+    // Execute in waves
+    let waveIndex = 0;
+    for (;;) {
+        const ready = sorted.filter((task) => {
+            if (statusMap.get(task.id) !== 'pending') return false;
+            return task.dependencies.every((dep) => statusMap.get(dep) === 'done');
+        });
+
+        if (ready.length === 0) {
+            const stillPending = sorted.filter((t) => statusMap.get(t.id) === 'pending');
+            if (stillPending.length > 0) {
+                console.error(red(`\nDeadlock detected: ${String(stillPending.length)} tasks cannot start due to failed dependencies.`));
+                for (const t of stillPending) {
+                    console.error(red(`  - ${t.id}: ${t.description}`));
+                }
+                return 1;
+            }
+            break;
+        }
+
+        waveIndex++;
+        console.log(dim(`Wave ${String(waveIndex)}: launching ${String(ready.length)} task(s)`));
+
+        const wavePromises = ready.map(async (task) => {
+            const slug = `${parentSlug}-${task.id}`;
+            if (statusMap.get(task.id) === 'failed') {
+                return { id: task.id, exitCode: 1 };
+            }
+
+            const { worktreePath: rawWorktreePath } = derive_names(slug, repoName, config as Record<string, string>);
+            const worktreePath = resolve(repoRoot, rawWorktreePath);
+
+            const child = spawn_agent(repoRoot, slug, worktreePath, config);
+            if (!child) {
+                statusMap.set(task.id, 'failed');
+                return { id: task.id, exitCode: 1 };
+            }
+
+            statusMap.set(task.id, 'running');
+            const exitCode = await track_child(child);
+            statusMap.set(task.id, exitCode === 0 ? 'done' : 'failed');
+
+            write_state(repoRoot, slug, {
+                status: exitCode === 0 ? 'done' : 'failed',
+                backend: 'decompose-orchestrator',
+                agent: config.defaultAgent ?? 'claude',
+            });
+
+            const indicator = exitCode === 0 ? green('✓') : red('✗');
+            console.log(`  ${indicator} ${slug} ${exitCode === 0 ? dim('(done)') : red(`(exit ${String(exitCode)})`)}`);
+
+            return { id: task.id, exitCode };
+        });
+
+        await Promise.all(wavePromises);
+    }
+
+    const failed = sorted.filter((t) => statusMap.get(t.id) === 'failed');
+    const done = sorted.filter((t) => statusMap.get(t.id) === 'done');
+
+    console.log('');
+    if (failed.length === 0) {
+        console.log(green(`✓ All ${String(done.length)} tasks completed successfully.`));
+        return 0;
+    } else {
+        console.log(red(`✗ ${String(failed.length)} of ${String(tasks.length)} tasks failed.`));
+        return 1;
+    }
+}
+
 function run(): number {
     let repoRoot: string;
     try {
@@ -35,11 +217,12 @@ function run(): number {
     const { flags, positional } = parse_args(process.argv.slice(2));
     const graphFile = positional[0];
     const dryRun = flags.get('dry-run') === true;
+    const execute = flags.get('execute') === true;
     const maxTasksRaw = flags.get('max-tasks');
     const maxTasks = parseInt(typeof maxTasksRaw === 'string' ? maxTasksRaw : '5', 10);
 
     if (!graphFile) {
-        console.error(red('Usage: swarm decompose <task-graph.json> [--dry-run] [--max-tasks N]'));
+        console.error(red('Usage: swarm decompose <task-graph.json> [--dry-run] [--execute] [--max-tasks N]'));
         return 1;
     }
 
@@ -86,8 +269,17 @@ function run(): number {
         return 0;
     }
 
-    console.log(dim('\nCreating worktrees and launching agents is not yet implemented.'));
-    console.log(dim('Use --dry-run to preview without executing.'));
+    if (!execute) {
+        console.log(dim('\nUse --execute to create worktrees and launch agents, or --dry-run to preview.'));
+        return 0;
+    }
+
+    const parentSlug = `decompose-${String(Date.now())}`;
+    const config = load_config(repoRoot);
+
+    void execute_dag(tasks, repoRoot, parentSlug, config).then((code) => {
+        process.exitCode = code;
+    });
     return 0;
 }
 
