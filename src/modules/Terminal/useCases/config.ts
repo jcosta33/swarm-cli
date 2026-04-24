@@ -1,6 +1,7 @@
 
 import { existsSync, readFileSync } from 'fs';
 import { join } from 'path';
+import { logger } from '../services/logger.ts';
 
 interface AgentConfig {
     command: string;
@@ -60,7 +61,7 @@ export function load_config(repoRoot: string): SwarmConfig {
     try {
         raw = JSON.parse(readFileSync(configPath, 'utf8')) as SwarmConfig;
     } catch (_e: unknown) {
-        console.warn(`Warning: ${configPath} is malformed. Using defaults.`);
+        logger.warn(`Warning: ${configPath} is malformed. Using defaults.`);
         return { ...DEFAULTS };
     }
     return {

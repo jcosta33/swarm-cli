@@ -4,6 +4,7 @@ import {
     bold,
     cyan,
     green,
+    logger,
     parse_args,
     red,
     yellow,
@@ -71,7 +72,7 @@ function run(): number {
         console.log(green('✓ Branch deleted.'));
     } catch (_e: unknown) {
         const e = _e instanceof Error ? _e : new Error(String(_e));
-        console.warn(yellow(`Warning: could not delete branch: ${e.message}`));
+        logger.warn(yellow(`Warning: could not delete branch: ${e.message}`));
     }
 
     remove_state(repoRoot, slug);

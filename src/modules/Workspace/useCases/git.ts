@@ -54,9 +54,7 @@ export function worktree_list(repoRoot: string): WorktreeInfo[] {
     let raw: string;
     try {
         raw = git(['worktree', 'list', '--porcelain'], { cwd: repoRoot });
-    } catch (_e: unknown) {
-        const e = _e instanceof Error ? _e : new Error(String(_e));
-        console.warn(`Warning: could not list worktrees: ${e.message}`);
+    } catch {
         return [];
     }
     const worktrees: WorktreeInfo[] = [];
@@ -169,9 +167,8 @@ export function is_branch_merged_into(branch: string, baseBranch: string, repoRo
             const output = git(['branch', '--merged', ref], { cwd: repoRoot });
             const merged = output.split('\n').map((l: string) => l.trim().replace(/^[*+]\s*/, ''));
             if (merged.includes(branch)) return true;
-        } catch (_e: unknown) {
-            const e = _e instanceof Error ? _e : new Error(String(_e));
-            console.warn(`Warning: could not check merged status of "${branch}" against "${ref}": ${e.message}`);
+        } catch {
+            // Ignore check errors and try next ref
         }
     }
     return false;
@@ -194,9 +191,7 @@ export function list_branches_by_prefix(prefix: string, repoRoot: string): strin
             .split('\n')
             .map((l: string) => l.trim().replace(/^[*+]\s*/, '')) // * = current branch, + = checked out in worktree
             .filter(Boolean);
-    } catch (_e: unknown) {
-        const e = _e instanceof Error ? _e : new Error(String(_e));
-        console.warn(`Warning: could not list branches with prefix "${prefix}": ${e.message}`);
+    } catch {
         return [];
     }
 }

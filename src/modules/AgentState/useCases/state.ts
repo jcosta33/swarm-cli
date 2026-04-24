@@ -57,9 +57,7 @@ function read_state_unlocked(statePath: string): Record<string, AgentState | und
     try {
         const parsed = JSON.parse(readFileSync(statePath, 'utf8')) as unknown;
         return validate_state(parsed);
-    } catch (_e: unknown) {
-        const e = _e instanceof Error ? _e : new Error(String(_e));
-        console.warn(`Warning: could not read state.json: ${e.message}`);
+    } catch {
         return {};
     }
 }
