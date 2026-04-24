@@ -3,7 +3,7 @@
 import { spawnSync } from 'child_process';
 import { existsSync, readFileSync } from 'fs';
 import { join } from 'path';
-import { red, cyan, bold, dim, green, yellow, parse_args } from '../../Terminal/index.ts';
+import { red, cyan, bold, dim, green, yellow, parse_args, logger } from '../../Terminal/index.ts';
 import { get_repo_root, worktree_list } from '../../Workspace/index.ts';
 import { read_state, is_process_running } from '../../AgentState/index.ts';
 import { query_sessions } from '../../AgentState/index.ts';
@@ -25,7 +25,7 @@ function run(): number {
     try {
         repoRoot = get_repo_root();
     } catch (_e: unknown) {
-        console.error(red('Error: Not inside a git repository.'));
+        logger.error(red('Error: Not inside a git repository.'));
         return 1;
     }
 
@@ -33,7 +33,7 @@ function run(): number {
     const slug = positional[0];
 
     if (!slug) {
-        console.log(red('Usage: swarm status <slug>'));
+        logger.error(red('Usage: swarm status <slug>'));
         return 1;
     }
 
@@ -51,46 +51,46 @@ function run(): number {
         // Telemetry DB may not exist yet
     }
 
-    console.log(cyan(`\n📊 Status: ${bold(slug)}\n`));
+    logger.raw(cyan(`\n📊 Status: ${bold(slug)}\n`));
 
     // State section
     if (state) {
         const statusColor = state.status === 'running' ? green : state.status === 'error' ? red : yellow;
-        console.log(`${bold('State:')} ${statusColor(state.status ?? 'unknown')}`);
-        if (state.agent) console.log(`${bold('Agent:')} ${state.agent}`);
+        logger.raw(`${bold('State:')} ${statusColor(state.status ?? 'unknown')}`);
+        if (state.agent) logger.raw(`${bold('Agent:')} ${state.agent}`);
         if (state.pid) {
             const running = is_process_running(state.pid);
-            console.log(`${bold('PID:')} ${String(state.pid)} ${running ? green('(running)') : dim('(not running)')}`);
+            logger.raw(`${bold('PID:')} ${String(state.pid)} ${running ? green('(running)') : dim('(not running)')}`);
         }
         if (state.lastUpdated) {
             const lastUpdated = new Date(state.lastUpdated);
-            console.log(`${bold('Last updated:')} ${lastUpdated.toLocaleString()}`);
+            logger.raw(`${bold('Last updated:')} ${lastUpdated.toLocaleString()}`);
         }
         if (state.exitCode !== undefined && state.exitCode !== null) {
-            console.log(`${bold('Exit code:')} ${state.exitCode === 0 ? green('0') : red(String(state.exitCode))}`);
+            logger.raw(`${bold('Exit code:')} ${state.exitCode === 0 ? green('0') : red(String(state.exitCode))}`);
         }
         if (state.error) {
-            console.log(`${bold('Error:')} ${red(state.error)}`);
+            logger.raw(`${bold('Error:')} ${red(state.error)}`);
         }
     } else {
-        console.log(dim('No state record found.'));
+        logger.info(dim('No state record found.'));
     }
 
     // Worktree section
-    console.log('');
+    logger.raw('');
     if (worktree) {
-        console.log(`${bold('Worktree:')} ${worktree.path}`);
-        console.log(`${bold('Branch:')} ${worktree.branch ?? 'unknown'}`);
+        logger.raw(`${bold('Worktree:')} ${worktree.path}`);
+        logger.raw(`${bold('Branch:')} ${worktree.branch ?? 'unknown'}`);
 
         const dirty = spawnSync('git', ['status', '--porcelain'], { cwd: worktree.path, encoding: 'utf8' }).stdout.trim();
         if (dirty.length > 0) {
             const count = dirty.split('\n').length;
-            console.log(`${bold('Working tree:')} ${yellow(`${String(count)} uncommitted change${count !== 1 ? 's' : ''}`)}`);
+            logger.raw(`${bold('Working tree:')} ${yellow(`${String(count)} uncommitted change${count !== 1 ? 's' : ''}`)}`);
         } else {
-            console.log(`${bold('Working tree:')} ${green('clean')}`);
+            logger.raw(`${bold('Working tree:')} ${green('clean')}`);
         }
     } else {
-        console.log(dim('No worktree found for this slug.'));
+        logger.info(dim('No worktree found for this slug.'));
     }
 
     // Task file section
@@ -99,13 +99,13 @@ function run(): number {
         const objectiveMatch = /## Objective\n+([^#]+)/.exec(content);
         const objective = objectiveMatch ? objectiveMatch[1].trim().split('\n')[0] : null;
         if (objective) {
-            console.log(`\n${bold('Objective:')} ${dim(objective)}`);
+            logger.raw(`\n${bold('Objective:')} ${dim(objective)}`);
         }
     }
 
     // Telemetry section
     if (sessions.length > 0) {
-        console.log(`\n${bold('Recent sessions:')}`);
+        logger.raw(`\n${bold('Recent sessions:')}`);
         for (const session of sessions.slice(0, 5)) {
             const duration = format_duration(session.started_at, session.finished_at);
             const agent = session.agent;
@@ -114,11 +114,11 @@ function run(): number {
                 : session.exit_code === 0
                     ? green('success')
                     : red(`failed (${String(session.exit_code)})`);
-            console.log(`  ${dim(session.started_at)} | ${agent.padEnd(10)} | ${duration.padStart(6)} | ${status}`);
+            logger.raw(`  ${dim(session.started_at)} | ${agent.padEnd(10)} | ${duration.padStart(6)} | ${status}`);
         }
     }
 
-    console.log('');
+    logger.raw('');
     return 0;
 }
 

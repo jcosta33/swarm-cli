@@ -15,6 +15,7 @@ import color from 'picocolors';
 import { print_help } from './modules/Commands/useCases/help.ts';
 import { run_dashboard } from './modules/Commands/useCases/dashboard.ts';
 import { get_adapter } from './modules/Adapters/index.ts';
+import { run_with_context } from './modules/Terminal/index.ts';
 
 const AGENT_INSTALL_INFO: Record<string, { install: string; desc: string } | undefined> = {
     aider: { install: 'pip install aider-chat', desc: 'Interactive command-line pair-programming AI.' },
@@ -210,6 +211,16 @@ async function main(): Promise<number> {
     return handle_unknown_command(cmd);
 }
 
-void main().then((code) => {
+function generate_trace_id(): string {
+    const bytes = new Uint8Array(8);
+    for (let i = 0; i < bytes.length; i++) {
+        bytes[i] = Math.floor(Math.random() * 256);
+    }
+    return Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('');
+}
+
+const traceId = generate_trace_id();
+
+void run_with_context({ trace_id: traceId }, () => main()).then((code) => {
     process.exitCode = code;
 });

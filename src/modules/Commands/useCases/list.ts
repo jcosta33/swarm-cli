@@ -5,6 +5,7 @@ import {
     cyan,
     dim,
     green,
+    logger,
     red,
     warn,
     yellow,
@@ -30,7 +31,7 @@ function run(): number {
     try {
         repoRoot = get_repo_root();
     } catch (_e: unknown) {
-        console.error(red('Error: Not inside a git repository.'));
+        logger.error(red('Error: Not inside a git repository.'));
         return 1;
     }
 
@@ -38,10 +39,10 @@ function run(): number {
     const globalState = read_state(repoRoot);
     const allBranches = list_branches_by_prefix('agent/', repoRoot);
 
-    console.log(cyan('\n👾 Swarm Sandboxes\n'));
+    logger.raw(cyan('\n👾 Swarm Sandboxes\n'));
 
     if (sandboxes.length === 0 && allBranches.length === 0) {
-        console.log(dim('No active sandboxes found.'));
+        logger.info(dim('No active sandboxes found.'));
         return 0;
     }
 
@@ -52,10 +53,10 @@ function run(): number {
         const backend = state.backend ? dim(` via ${state.backend}`) : '';
         const pid = state.pid ? dim(` (PID: ${state.pid.toString()})`) : '';
 
-        console.log(
+        logger.raw(
             `  ${statusTag.padEnd(20)} ${bold(slug)} ${pid}${backend}`
         );
-        console.log(`  ${dim('↳')} Branch: ${s.branch ?? 'unknown'}  Path: ${s.path}`);
+        logger.raw(`  ${dim('↳')} Branch: ${s.branch ?? 'unknown'}  Path: ${s.path}`);
     });
 
     // Show branches that exist but have no worktree
@@ -65,11 +66,11 @@ function run(): number {
         warn(`${String(orphaned.length)} branch${orphaned.length !== 1 ? 'es' : ''} without worktrees:`);
         orphaned.forEach((b) => {
             const slug = b.replace('agent/', '');
-            console.log(`    ${dim(slug)} ${dim(`(branch: ${b})`)}`);
+            logger.info(`    ${dim(slug)} ${dim(`(branch: ${b})`)}`);
         });
     }
 
-    console.log('');
+    logger.raw('');
     return 0;
 }
 

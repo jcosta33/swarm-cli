@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { parse_args, red, green, dim } from '../../Terminal/index.ts';
+import { parse_args, red, green, dim, logger } from '../../Terminal/index.ts';
 import { get_repo_root } from '../../Workspace/index.ts';
 import {
     prune_events,
@@ -13,7 +13,7 @@ function run(): number {
     try {
         repoRoot = get_repo_root();
     } catch {
-        console.error(red('Error: Not inside a git repository.'));
+        logger.error(red('Error: Not inside a git repository.'));
         return 1;
     }
 
@@ -27,17 +27,17 @@ function run(): number {
     if (pruneDaysRaw !== undefined) {
         const days = parseInt(pruneDaysRaw, 10);
         if (Number.isNaN(days)) {
-            console.error(red('Invalid --prune value. Expected number of days.'));
+            logger.error(red('Invalid --prune value. Expected number of days.'));
             return 1;
         }
         const eventsDeleted = prune_events(repoRoot, days);
         const sessionsDeleted = prune_sessions(repoRoot, days);
-        console.log(green(`Pruned ${String(eventsDeleted)} events and ${String(sessionsDeleted)} sessions older than ${String(days)} days.`));
+        logger.info(green(`Pruned ${String(eventsDeleted)} events and ${String(sessionsDeleted)} sessions older than ${String(days)} days.`));
         return 0;
     }
 
     if (follow) {
-        console.log(dim('Following telemetry stream (Ctrl+C to stop)...\n'));
+        logger.info(dim('Following telemetry stream (Ctrl+C to stop)...\n'));
         let lastCount = 0;
         const poll = () => {
             const latest = query_sessions(repoRoot, 50);
@@ -50,7 +50,7 @@ function run(): number {
                     const duration = session.finished_at
                         ? `${String(Math.round((new Date(session.finished_at).getTime() - new Date(session.started_at).getTime()) / 1000))}s`
                         : 'running';
-                    console.log(`  ${session.slug.padEnd(20)} ${session.agent.padEnd(10)} ${duration.padEnd(10)} exit:${String(session.exit_code ?? '-')}  ${dim(session.started_at)}`);
+                    logger.raw(`  ${session.slug.padEnd(20)} ${session.agent.padEnd(10)} ${duration.padEnd(10)} exit:${String(session.exit_code ?? '-')}  ${dim(session.started_at)}`);
                 }
                 lastCount = filtered.length;
             }
@@ -59,8 +59,8 @@ function run(): number {
         const interval = setInterval(poll, 2000);
         process.on('SIGINT', () => {
             clearInterval(interval);
-            console.log('');
-            return 0;
+            logger.raw('');
+            return;
         });
         return 0;
     }
@@ -68,7 +68,7 @@ function run(): number {
     const sessions = query_sessions(repoRoot, 50);
 
     if (sessions.length === 0) {
-        console.log(dim('No sessions found.'));
+        logger.info(dim('No sessions found.'));
         return 0;
     }
 
@@ -81,19 +81,19 @@ function run(): number {
     }
 
     if (asJson) {
-        console.log(JSON.stringify(filtered, null, 2));
+        logger.raw(JSON.stringify(filtered, null, 2));
         return 0;
     }
 
-    console.log('Recent sessions:\n');
+    logger.raw('Recent sessions:\n');
     for (const session of filtered) {
         const duration = session.finished_at
             ? `${String(Math.round((new Date(session.finished_at).getTime() - new Date(session.started_at).getTime()) / 1000))}s`
             : 'running';
-        console.log(`  ${session.slug.padEnd(20)} ${session.agent.padEnd(10)} ${duration.padEnd(10)} exit:${String(session.exit_code ?? '-')}`);
+        logger.raw(`  ${session.slug.padEnd(20)} ${session.agent.padEnd(10)} ${duration.padEnd(10)} exit:${String(session.exit_code ?? '-')}`);
     }
 
-    console.log(`\nTotal: ${String(filtered.length)} sessions\n`);
+    logger.raw(`\nTotal: ${String(filtered.length)} sessions\n`);
     return 0;
 }
 

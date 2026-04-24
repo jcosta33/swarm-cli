@@ -57,22 +57,24 @@ export function bold(text: string) {
     return c(text, colors.bold);
 }
 
+import { logger } from '../services/logger.ts';
+
 export function success(msg: string) {
-    console.log(`\n${green('✔')} ${bold(msg)}`);
+    logger.info(`${green('✔')} ${bold(msg)}`);
 }
 export function info(msg: string) {
-    console.log(`\n${blue('i')} ${msg}`);
+    logger.info(`${blue('i')} ${msg}`);
 }
 export function warn(msg: string) {
-    console.warn(`\n${yellow('⚠')} ${msg}`);
+    logger.warn(`${yellow('⚠')} ${msg}`);
 }
 export function error(msg: string) {
-    console.error(`\n${red('✖')} ${bold(red('Error:'))} ${msg}\n`);
+    logger.error(`${red('✖')} ${bold(red('Error:'))} ${msg}`);
 }
 
 export function box(title: string, lines: string[]) {
     const content = lines.join('\n');
-    console.log(`\n${cyan('┌')} ${bold(cyan(title))} ${cyan('─'.repeat(Math.max(0, 50 - title.length - 3)))}`);
-    console.log(content);
-    console.log(`${cyan('└' + '─'.repeat(50))}\n`);
+    logger.raw(`\n${cyan('┌')} ${bold(cyan(title))} ${cyan('─'.repeat(Math.max(0, 50 - title.length - 3)))}`);
+    logger.raw(content);
+    logger.raw(`${cyan('└' + '─'.repeat(50))}\n`);
 }

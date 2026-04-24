@@ -1,5 +1,6 @@
 
 
+export * from './services/logger.ts';
 export * from './useCases/cli.ts';
 export * from './useCases/colors.ts';
 export * from './useCases/config.ts';

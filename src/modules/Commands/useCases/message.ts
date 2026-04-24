@@ -2,7 +2,7 @@
 
 import { existsSync, mkdirSync, appendFileSync } from 'fs';
 import { join } from 'path';
-import { red, green, dim, parse_args } from '../../Terminal/index.ts';
+import { red, green, dim, parse_args, logger } from '../../Terminal/index.ts';
 import { get_repo_root } from '../../Workspace/index.ts';
 import { read_state } from '../../AgentState/index.ts';
 
@@ -11,7 +11,7 @@ function run(): number {
     try {
         repoRoot = get_repo_root();
     } catch {
-        console.error(red('Error: Not inside a git repository.'));
+        logger.error(red('Error: Not inside a git repository.'));
         return 1;
     }
 
@@ -20,8 +20,8 @@ function run(): number {
     const jsonPayload = positional[1];
 
     if (!slug || !jsonPayload) {
-        console.error(red('Usage: swarm message <slug> <json>'));
-        console.log(dim('Example: swarm message my-agent \'{"type":"pause"}\''));
+        logger.error(red('Usage: swarm message <slug> <json>'));
+        logger.info(dim('Example: swarm message my-agent \'{"type":"pause"}\''));
         return 1;
     }
 
@@ -29,13 +29,13 @@ function run(): number {
     try {
         payload = JSON.parse(jsonPayload);
     } catch {
-        console.error(red('Invalid JSON payload.'));
+        logger.error(red('Invalid JSON payload.'));
         return 1;
     }
 
     const state = read_state(repoRoot);
     if (!state[slug]) {
-        console.error(red(`No agent found with slug: ${slug}`));
+        logger.error(red(`No agent found with slug: ${slug}`));
         return 1;
     }
 
@@ -52,8 +52,8 @@ function run(): number {
 
     appendFileSync(mailboxPath, `${entry}\n`, 'utf8');
 
-    console.log(green(`✓ Message queued for ${slug}`));
-    console.log(dim(`Mailbox: ${mailboxPath}`));
+    logger.info(green(`✓ Message queued for ${slug}`));
+    logger.info(dim(`Mailbox: ${mailboxPath}`));
     return 0;
 }
 

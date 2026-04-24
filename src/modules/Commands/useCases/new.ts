@@ -5,6 +5,7 @@ import {
     cyan,
     dim,
     green,
+    logger,
     parse_args,
     prompt_input,
     red,
@@ -36,7 +37,7 @@ function run(): number {
     try {
         repoRoot = get_repo_root();
     } catch (_e: unknown) {
-        console.error(red('Error: Not inside a git repository.'));
+        logger.error(red('Error: Not inside a git repository.'));
         return 1;
     }
 
@@ -71,31 +72,31 @@ function run(): number {
     // Check for existing branch or worktree
     const existing = existingWorktrees.find((w) => w.branch === branch);
     if (existing) {
-        console.log(
+        logger.info(
             yellow(
                 `Worktree for "${slug}" already exists at ${existing.path}`
             )
         );
         if (config.reuseExistingByDefault) {
-            console.log(dim('Reusing existing worktree (--reuseExistingByDefault is true).'));
+            logger.info(dim('Reusing existing worktree (--reuseExistingByDefault is true).'));
         } else {
-            console.error(red('Aborting. Use a different slug or remove the existing worktree.'));
+            logger.error(red('Aborting. Use a different slug or remove the existing worktree.'));
             return 1;
         }
     }
 
     if (branch_exists(branch, repoRoot) && !existing) {
-        console.log(yellow(`Branch ${branch} already exists but has no worktree. Attaching to it.`));
+        logger.info(yellow(`Branch ${branch} already exists but has no worktree. Attaching to it.`));
     }
 
     // Create worktree
-    console.log(cyan(`\nCreating worktree for ${bold(slug)}...`));
+    logger.info(cyan(`\nCreating worktree for ${bold(slug)}...`));
     try {
         worktree_create(worktreePath, branch, config.defaultBaseBranch ?? 'main', repoRoot);
         success(`Worktree created: ${worktreePath}`);
     } catch (_e: unknown) {
         const e = _e instanceof Error ? _e : new Error(String(_e));
-        console.error(red(`Failed to create worktree: ${e.message}`));
+        logger.error(red(`Failed to create worktree: ${e.message}`));
         return 1;
     }
 
@@ -134,7 +135,7 @@ function run(): number {
         agent: config.defaultAgent ?? 'claude',
     });
 
-    console.log(
+    logger.raw(
         cyan(`\nSandbox "${bold(slug)}" is ready.\n`) +
             dim(`  Branch:     ${branch}\n`) +
             dim(`  Worktree:   ${worktreePath}\n`) +
@@ -147,7 +148,7 @@ function run(): number {
         return run_agent_launch({ repoRoot, slug, worktreePath, title });
     }
 
-    console.log(
+    logger.info(
         cyan(`Run ${green(`swarm open ${slug}`)} to reopen it, or add --launch to auto-start the agent.`)
     );
     return 0;
@@ -162,7 +163,7 @@ async function main(): Promise<number> {
         slug = await prompt_input('Task slug (e.g. billing-refactor): ');
     }
     if (!slug) {
-        console.error(red('Slug is required.'));
+        logger.error(red('Slug is required.'));
         return 1;
     }
     if (!title) {
