@@ -26,3 +26,4 @@ build/
 
 # Stale artifacts
 lint-results.json
+node_modules
