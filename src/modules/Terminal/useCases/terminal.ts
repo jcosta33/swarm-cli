@@ -22,7 +22,7 @@ export function resolve_backend(requested: string): string {
 /**
  * Build the banner string for display before agent launch.
  */
-function build_banner(info: Record<string, string>): string {
+export function build_banner(info: Record<string, string>): string {
     const titleWidth = Math.max(0, 50 - info.title.length - 3);
     return [
         `\n${cyan('┌')} ${bold(cyan(info.title))} ${cyan('─'.repeat(titleWidth))}`,
@@ -113,7 +113,7 @@ function launch_current(worktreePath: string, agentCmd: string, agentArgs: strin
 /**
  * Remove a --flag <value> pair from an args array.
  */
-function strip_flag(flag: string, args: string[]): string[] {
+export function strip_flag(flag: string, args: string[]): string[] {
     const out: string[] = [];
     for (let i = 0; i < args.length; i++) {
         if (args[i] === flag) {
@@ -162,7 +162,7 @@ exec > >(tee -a "$LOG_FILE") 2>&1
 /**
  * POSIX single-quote a string so it is safe to embed in a shell command.
  */
-function posix_quote(str: string): string {
+export function posix_quote(str: string): string {
     return `'${str.replace(/'/g, "'\\''")}'`;
 }
 

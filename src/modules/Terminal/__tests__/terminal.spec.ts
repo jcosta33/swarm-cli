@@ -1,4 +1,5 @@
 import { parse_args, load_config } from '../../Terminal/index.ts';
+import { resolve_backend, check_backend, build_banner, strip_flag, posix_quote } from '../useCases/terminal.ts';
 
 import { describe, expect, it, beforeEach, afterEach } from 'vitest';
 import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'fs';
@@ -53,6 +54,126 @@ describe('terminal module', () => {
             const result = parse_args(['new', 'my-task', '--agent', 'claude', 'Extra Title']);
             expect(result.positional).toEqual(['new', 'my-task', 'Extra Title']);
             expect(result.flags.get('agent')).toBe('claude');
+        });
+    });
+
+    describe('resolve_backend', () => {
+        const originalPlatform = process.platform;
+
+        afterEach(() => {
+            Object.defineProperty(process, 'platform', { value: originalPlatform });
+        });
+
+        it('returns requested backend when not auto', () => {
+            expect(resolve_backend('current')).toBe('current');
+            expect(resolve_backend('terminal')).toBe('terminal');
+            expect(resolve_backend('iterm')).toBe('iterm');
+        });
+
+        it('resolves auto to terminal on darwin', () => {
+            Object.defineProperty(process, 'platform', { value: 'darwin' });
+            expect(resolve_backend('auto')).toBe('terminal');
+        });
+
+        it('resolves auto to windows-auto on win32', () => {
+            Object.defineProperty(process, 'platform', { value: 'win32' });
+            expect(resolve_backend('auto')).toBe('windows-auto');
+        });
+
+        it('resolves auto to linux-auto on linux', () => {
+            Object.defineProperty(process, 'platform', { value: 'linux' });
+            expect(resolve_backend('auto')).toBe('linux-auto');
+        });
+    });
+
+    describe('check_backend', () => {
+        const originalPlatform = process.platform;
+
+        afterEach(() => {
+            Object.defineProperty(process, 'platform', { value: originalPlatform });
+        });
+
+        it('current is always available', () => {
+            expect(check_backend('current')).toEqual({ ok: true });
+        });
+
+        it('terminal requires darwin', () => {
+            Object.defineProperty(process, 'platform', { value: 'darwin' });
+            expect(check_backend('terminal')).toEqual({ ok: true });
+            Object.defineProperty(process, 'platform', { value: 'linux' });
+            expect(check_backend('terminal')).toEqual({ ok: false, reason: 'Terminal.app is macOS only' });
+        });
+
+        it('iterm requires darwin', () => {
+            Object.defineProperty(process, 'platform', { value: 'linux' });
+            expect(check_backend('iterm')).toEqual({ ok: false, reason: 'iTerm2 is macOS only' });
+        });
+
+        it('linux-auto requires linux', () => {
+            Object.defineProperty(process, 'platform', { value: 'linux' });
+            expect(check_backend('linux-auto')).toEqual({ ok: true });
+            Object.defineProperty(process, 'platform', { value: 'darwin' });
+            expect(check_backend('linux-auto')).toEqual({ ok: false, reason: 'linux-auto requires Linux' });
+        });
+
+        it('windows-auto requires windows', () => {
+            Object.defineProperty(process, 'platform', { value: 'win32' });
+            expect(check_backend('windows-auto')).toEqual({ ok: true });
+            Object.defineProperty(process, 'platform', { value: 'linux' });
+            expect(check_backend('windows-auto')).toEqual({ ok: false, reason: 'windows-auto requires Windows' });
+        });
+
+        it('auto is always available', () => {
+            expect(check_backend('auto')).toEqual({ ok: true });
+        });
+
+        it('returns error for unknown backend', () => {
+            expect(check_backend('unknown-backend')).toEqual({ ok: false, reason: 'Unknown terminal backend: unknown-backend' });
+        });
+    });
+
+    describe('build_banner', () => {
+        it('builds a banner string with all fields', () => {
+            const banner = build_banner({
+                title: 'Test Task',
+                slug: 'test-task',
+                branch: 'agent/test-task',
+                taskFile: '.agents/tasks/test-task.md',
+                agent: 'claude',
+            });
+            expect(banner).toContain('Test Task');
+            expect(banner).toContain('test-task');
+            expect(banner).toContain('agent/test-task');
+            expect(banner).toContain('.agents/tasks/test-task.md');
+            expect(banner).toContain('claude');
+        });
+    });
+
+    describe('strip_flag', () => {
+        it('removes a flag and its value from args', () => {
+            expect(strip_flag('--name', ['--name', 'my-slug', '--verbose'])).toEqual(['--verbose']);
+        });
+
+        it('returns unchanged when flag is not present', () => {
+            expect(strip_flag('--name', ['--verbose', '--debug'])).toEqual(['--verbose', '--debug']);
+        });
+
+        it('handles flag at the end of array', () => {
+            expect(strip_flag('--name', ['--verbose', '--name'])).toEqual(['--verbose']);
+        });
+    });
+
+    describe('posix_quote', () => {
+        it('wraps simple strings in single quotes', () => {
+            expect(posix_quote('hello')).toBe("'hello'");
+        });
+
+        it('escapes single quotes correctly', () => {
+            expect(posix_quote("it's")).toBe("'it'\\''s'");
+        });
+
+        it('handles empty string', () => {
+            expect(posix_quote('')).toBe("''");
         });
     });
 

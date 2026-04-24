@@ -13,7 +13,7 @@ interface AgentState {
     error?: string | null;
 }
 
-function is_agent_state(value: unknown): value is AgentState {
+export function is_agent_state(value: unknown): value is AgentState {
     if (typeof value !== 'object' || value === null) {
         return false;
     }
@@ -22,7 +22,7 @@ function is_agent_state(value: unknown): value is AgentState {
     return Object.keys(obj).every((key) => validKeys.includes(key));
 }
 
-function validate_state(data: unknown): Record<string, AgentState> {
+export function validate_state(data: unknown): Record<string, AgentState> {
     if (typeof data !== 'object' || data === null) {
         return {};
     }

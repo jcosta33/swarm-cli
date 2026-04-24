@@ -1,4 +1,5 @@
 import { read_state, write_state, remove_state, is_process_running } from '../../AgentState/index.ts';
+import { is_agent_state, validate_state } from '../useCases/state.ts';
 
 import { describe, expect, it, beforeEach, afterEach } from 'vitest';
 import { mkdtempSync, mkdirSync, writeFileSync, existsSync, rmSync } from 'fs';
@@ -85,5 +86,40 @@ describe('agent-state module', () => {
     it('is_process_running returns true for current process and false for non-existent', () => {
         expect(is_process_running(process.pid)).toBe(true);
         expect(is_process_running(999999)).toBe(false);
+    });
+
+    describe('is_agent_state', () => {
+        it('returns true for valid agent state objects', () => {
+            expect(is_agent_state({ status: 'running' })).toBe(true);
+            expect(is_agent_state({ status: 'running', pid: 1234, backend: 'terminal', agent: 'claude' })).toBe(true);
+        });
+
+        it('returns false for non-objects', () => {
+            expect(is_agent_state(null)).toBe(false);
+            expect(is_agent_state('string')).toBe(false);
+            expect(is_agent_state(123)).toBe(false);
+        });
+
+        it('returns false for objects with invalid keys', () => {
+            expect(is_agent_state({ status: 'running', invalidKey: 'x' })).toBe(false);
+        });
+    });
+
+    describe('validate_state', () => {
+        it('returns empty object for non-object input', () => {
+            expect(validate_state(null)).toEqual({});
+            expect(validate_state('string')).toEqual({});
+            expect(validate_state(123)).toEqual({});
+        });
+
+        it('filters out invalid entries and keeps valid ones', () => {
+            const input = {
+                'valid-slug': { status: 'running', agent: 'claude' },
+                'invalid-slug': { status: 'running', extraField: 'bad' },
+            };
+            const result = validate_state(input);
+            expect(result['valid-slug']).toEqual({ status: 'running', agent: 'claude' });
+            expect(result['invalid-slug']).toBeUndefined();
+        });
     });
 });
