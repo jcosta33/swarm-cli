@@ -167,7 +167,7 @@ $ pnpm deps:validate
 > swarm-cli@1.0.0 deps:validate /Users/josecosta/dev/swarm-cli
 > depcruise src --config .dependency-cruiser.cjs
 
-✔ no dependency violations found (0 modules, 0 dependencies cruised)
+✔ no dependency violations found (87 modules, 198 dependencies cruised)
 ```
 
 **Tests:**
@@ -176,18 +176,23 @@ $ pnpm test:run
 > swarm-cli@1.0.0 test:run /Users/josecosta/dev/swarm-cli
 > vitest run
 
-✓ src/modules/TaskManagement/__tests__/task-management.spec.ts (1 test)
-✓ src/modules/Adapters/__tests__/adapters.spec.ts (1 test)
-✓ src/modules/Workspace/__tests__/workspace.spec.ts (1 test)
-✓ src/modules/Terminal/__tests__/terminal.spec.ts (1 test)
-✓ src/modules/AgentState/__tests__/agent-state.spec.ts (1 test)
-✓ src/modules/TaskManagement/__tests__/slug.spec.ts (1 test)
+✓ src/modules/TaskManagement/__tests__/slug.spec.ts (8 tests)
+✓ src/modules/Workspace/__tests__/workspace.spec.ts (3 tests)
+✓ src/modules/TaskManagement/__tests__/task-management.spec.ts (3 tests)
+✓ src/modules/Adapters/__tests__/adapters.spec.ts (5 tests)
+✓ src/modules/AgentState/__tests__/agent-state.spec.ts (7 tests)
+✓ src/modules/Terminal/__tests__/terminal.spec.ts (13 tests)
 
 Test Files  6 passed (6)
-     Tests  6 passed (6)
+     Tests  39 passed (39)
 ```
 
-### What changed?
+### Additional changes completed in this session
+
+- **process.exit refactoring:** Replaced all scattered `process.exit(0|1)` calls across 48 command files with `return` values. Added `return 0` at function ends to satisfy TS2366. Fixed async execution guards (e.g., `task.ts`) to use `.then(code => process.exitCode = code)`. Fixed lint `no-useless-assignment` in `find.ts`.
+- **`swarm message` command:** New command file `message.ts` that validates JSON input, checks agent state exists, and appends structured messages to `.agents/mailbox/{slug}.jsonl`.
+- **`swarm decompose --execute`:** Full DAG executor implementation. Creates worktrees and task files for all tasks upfront, then executes in topological waves. Independent tasks run concurrently via `spawn(detached: true)`. Polls child process exit events. Reports pass/fail per task and overall.
+- **NDJSON logger infrastructure:** Created `Terminal/services/logger.ts` with `info/error/warn/debug/raw` methods, `AsyncLocalStorage` context for `trace_id` and `slug`, and `SWARM_LOG_FORMAT=json` environment toggle. Updated `colors.ts` helpers (`success`, `info`, `warn`, `error`, `box`) to route through logger. Migrated `new.ts`, `list.ts`, `status.ts`, `logs.ts`, `message.ts` to use logger.
 
 **Phase 1 — Critical fixes:**
 - Rewrote `index.ts` to spawn command files directly via `spawnSync(process.execPath, ['--experimental-strip-types', commandPath, ...args])` instead of broken dynamic imports into the missing `src/commands/` directory. Added `cmd` sanitization (`/^[a-z0-9-]+$/`) and updated help text to list all ~40 commands.
@@ -215,8 +220,8 @@ Test Files  6 passed (6)
 
 ### Open items / follow-up
 
-- **Remove unused `ora` dependency:** Noted but deferred per safety rules (requires explicit instruction to modify `package.json` dependencies).
-- **Scattered `process.exit()` in command files:** Some command files still use `process.exit()` inside nested functions. These should be refactored to return exit codes so callers control the flow.
-- **NDJSON logging with `SWARM_LOG_FORMAT=json`:** From the observability-telemetry spec. Not yet implemented.
-- **`swarm decompose --execute`:** From the hierarchical-task-decomposition spec. The `--dry-run` flag works but `--execute` is not yet implemented.
-- **`swarm message <slug> <json>`:** From the agent-communication-protocol spec. Not yet implemented.
+- **Remove unused `ora` dependency:** ✅ Removed (no longer in `package.json`).
+- **Scattered `process.exit()` in command files:** ✅ Refactored all 48 command files to return exit codes; execution guards use `process.exitCode = run()`.
+- **NDJSON logging with `SWARM_LOG_FORMAT=json`:** ✅ Implemented `Terminal/services/logger.ts` with AsyncLocalStorage context, integrated into `index.ts`, migrated color helpers and representative command files.
+- **`swarm decompose --execute`:** ✅ Implemented wave-based parallel DAG executor with worktree creation, task file generation, agent spawning, and completion polling.
+- **`swarm message <slug> <json>`:** ✅ Implemented file-based mailbox command writing to `.agents/mailbox/{slug}.jsonl`.
