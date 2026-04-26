@@ -23,16 +23,16 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">90.32% </span>
+                <span class="strong">80.55% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>28/31</span>
+                <span class='fraction'>29/36</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">66.66% </span>
+                <span class="strong">61.01% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>36/54</span>
+                <span class='fraction'>36/59</span>
             </div>
         
             
@@ -44,9 +44,9 @@
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">93.1% </span>
+                <span class="strong">82.35% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>27/29</span>
+                <span class='fraction'>28/34</span>
             </div>
         
             
@@ -209,7 +209,17 @@
 <a name='L144'></a><a href='#L144'>144</a>
 <a name='L145'></a><a href='#L145'>145</a>
 <a name='L146'></a><a href='#L146'>146</a>
-<a name='L147'></a><a href='#L147'>147</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L147'></a><a href='#L147'>147</a>
+<a name='L148'></a><a href='#L148'>148</a>
+<a name='L149'></a><a href='#L149'>149</a>
+<a name='L150'></a><a href='#L150'>150</a>
+<a name='L151'></a><a href='#L151'>151</a>
+<a name='L152'></a><a href='#L152'>152</a>
+<a name='L153'></a><a href='#L153'>153</a>
+<a name='L154'></a><a href='#L154'>154</a>
+<a name='L155'></a><a href='#L155'>155</a>
+<a name='L156'></a><a href='#L156'>156</a>
+<a name='L157'></a><a href='#L157'>157</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -224,6 +234,16 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -368,8 +388,18 @@ const METADATA_START = '## Metadata';
  * @param {object} data
  * @returns {string}
  */
-function render_template(templateContent: string, data: Record&lt;string, string&gt;) {
-    const cmds = (data.commands ? <span class="branch-0 cbranch-no" title="branch not covered" >JSON.parse(data.commands) </span>: {}) as Record&lt;string, string&gt;;
+export function render_template(templateContent: string, data: Record&lt;string, string&gt;) {
+    let cmds: Record&lt;string, string&gt; = {};
+    <span class="missing-if-branch" title="if path not taken" >I</span>if (data.commands) {
+<span class="cstat-no" title="statement not covered" >        try {</span>
+            const parsed = <span class="cstat-no" title="statement not covered" >JSON.parse(data.commands) </span>as unknown;
+<span class="cstat-no" title="statement not covered" >            if (parsed &amp;&amp; typeof parsed === 'object' &amp;&amp; !Array.isArray(parsed)) {</span>
+<span class="cstat-no" title="statement not covered" >                cmds = parsed as Record&lt;string, string&gt;;</span>
+            }
+        } catch {
+            // Fall back to defaults if commands JSON is malformed.
+        }
+    }
     return templateContent
         .replace(/\{\{title\}\}/g, data.title || <span class="branch-1 cbranch-no" title="branch not covered" >"")</span>
         .replace(/\{\{slug\}\}/g, data.slug || <span class="branch-1 cbranch-no" title="branch not covered" >"")</span>
@@ -393,7 +423,7 @@ function render_template(templateContent: string, data: Record&lt;string, string
  * @param {object} data
  * @returns {string}
  */
-function build_metadata_block(data: Record&lt;string, string&gt;) {
+export function build_metadata_block(data: Record&lt;string, string&gt;) {
     return [
         `## Metadata`,
         `- Slug: ${data.slug}`,
@@ -508,7 +538,7 @@ Complete the Self-review section (copied from the appropriate \`task-*.md\` temp
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-04-24T21:16:46.866Z
+                at 2026-04-24T23:09:44.803Z
             </div>
         <script src="../../prettify.js"></script>
         <script>

@@ -10,7 +10,7 @@ import { get_repo_root, worktree_list } from '../../Workspace/index.ts';
 
 import { spawnSync } from 'child_process';
 
-function run(): number {
+export function run(): number {
     let repoRoot: string;
     try {
         repoRoot = get_repo_root();

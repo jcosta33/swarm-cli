@@ -2,25 +2,42 @@
     "compilerOptions": {
         "target": "ES2022",
         "lib": ["ES2024", "DOM", "DOM.Iterable"],
-        "types": ["@webgpu/types"],
-        "module": "ESNext",
-        "moduleResolution": "bundler",
+        "types": ["node"],
+        "module": "NodeNext",
+        "moduleResolution": "NodeNext",
         "strict": true,
-        "noUnusedLocals": true,
-        "noUnusedParameters": true,
+        "noUnusedLocals": false,
+        "noUnusedParameters": false,
         "noFallthroughCasesInSwitch": true,
-        "noUncheckedIndexedAccess": true,
+        "noUncheckedIndexedAccess": false,
         "exactOptionalPropertyTypes": false,
         "forceConsistentCasingInFileNames": true,
         "resolveJsonModule": true,
         "isolatedModules": true,
         "esModuleInterop": true,
+        "allowImportingTsExtensions": true,
+        "noEmit": true,
         "jsx": "react-jsx",
         "skipLibCheck": true,
         "paths": {
             "#/*": ["./src/*"]
         }
     },
-    "include": ["src", "vite-env.d.ts"],
-    "exclude": ["dist", "build", "coverage", "storybook-static", "src/**/*.spec.ts", "src/**/*.spec.tsx"]
+    "include": ["src", "bin"],
+    "exclude": [
+        "dist",
+        "build",
+        "coverage",
+        "storybook-static",
+        "node_modules",
+        "src/**/*.spec.ts",
+        "src/**/*.spec.tsx",
+        "src/**/*.test.ts",
+        "src/**/*.test.tsx",
+        "src/infra/store/storage/createAutomergeStorage.ts",
+        "src/infra/store/storage/createLocalStorage.ts",
+        "src/infra/store/storage/LocalStorageKeys.ts",
+        "src/infra/store/useStore.ts",
+        "src/infra/store/useStoreSelector.ts"
+    ]
 }

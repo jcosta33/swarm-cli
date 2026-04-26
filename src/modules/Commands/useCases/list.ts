@@ -26,7 +26,7 @@ function format_status(state: { status?: string; pid?: number; backend?: string 
     return yellow(`[${state.status.toUpperCase()}]`);
 }
 
-function run(): number {
+export function run(): number {
     let repoRoot: string;
     try {
         repoRoot = get_repo_root();

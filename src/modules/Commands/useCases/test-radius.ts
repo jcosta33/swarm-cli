@@ -7,7 +7,7 @@ import { spawnSync } from 'child_process';
 import { existsSync, readdirSync, statSync, readFileSync } from 'fs';
 import { basename, dirname, join } from 'path';
 
-function find_impacted_specs(repoRoot: string, targetFile: unknown) {
+export function find_impacted_specs(repoRoot: string, targetFile: unknown) {
     const targetName = basename(targetFile as string, ".ts").replace('.tsx', '');
     const specs: string[] = [];
 
@@ -46,7 +46,7 @@ function find_impacted_specs(repoRoot: string, targetFile: unknown) {
     return specs;
 }
 
-function run(): number {
+export function run(): number {
     let repoRoot;
     try {
         repoRoot = get_repo_root();

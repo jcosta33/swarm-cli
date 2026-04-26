@@ -8,7 +8,7 @@ import {
     query_sessions,
 } from '../../AgentState/services/telemetry.ts';
 
-function run(): number {
+export function run(): number {
     let repoRoot: string;
     try {
         repoRoot = get_repo_root();

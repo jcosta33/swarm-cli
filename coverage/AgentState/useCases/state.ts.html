@@ -23,9 +23,9 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">96.42% </span>
+                <span class="strong">96.49% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>54/56</span>
+                <span class='fraction'>55/57</span>
             </div>
         
             
@@ -44,9 +44,9 @@
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">96.36% </span>
+                <span class="strong">96.42% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>53/55</span>
+                <span class='fraction'>54/56</span>
             </div>
         
             
@@ -200,7 +200,10 @@
 <a name='L135'></a><a href='#L135'>135</a>
 <a name='L136'></a><a href='#L136'>136</a>
 <a name='L137'></a><a href='#L137'>137</a>
-<a name='L138'></a><a href='#L138'>138</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L138'></a><a href='#L138'>138</a>
+<a name='L139'></a><a href='#L139'>139</a>
+<a name='L140'></a><a href='#L140'>140</a>
+<a name='L141'></a><a href='#L141'>141</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -225,21 +228,26 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">17x</span>
+<span class="cline-any cline-yes">18x</span>
 <span class="cline-any cline-yes">3x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">14x</span>
-<span class="cline-any cline-yes">14x</span>
+<span class="cline-any cline-yes">15x</span>
+<span class="cline-any cline-yes">15x</span>
 <span class="cline-any cline-yes">14x</span>
 <span class="cline-any cline-yes">13x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">15x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">14x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">14x</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">14x</span>
 <span class="cline-any cline-yes">14x</span>
@@ -253,12 +261,12 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">13x</span>
+<span class="cline-any cline-yes">14x</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">13x</span>
-<span class="cline-any cline-yes">13x</span>
-<span class="cline-any cline-yes">13x</span>
+<span class="cline-any cline-yes">14x</span>
+<span class="cline-any cline-yes">14x</span>
+<span class="cline-any cline-yes">14x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -269,14 +277,12 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">5x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">5x</span>
-<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">5x</span>
+<span class="cline-any cline-yes">5x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">4x</span>
-<span class="cline-any cline-yes">4x</span>
-<span class="cline-any cline-yes">4x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">5x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -375,14 +381,19 @@ export function validate_state(data: unknown): Record&lt;string, AgentState&gt; 
 }
 &nbsp;
 /**
- * Returns the path to the state file. Creates `.agents` dir if missing.
+ * Returns the path to the state file. Creates `.agents` dir if missing
+ * and seeds an empty state.json so `proper-lockfile` can lock it.
  */
 function get_state_file_path(repoRoot: string) {
     const agentsDir = join(repoRoot, '.agents');
     if (!existsSync(agentsDir)) {
         mkdirSync(agentsDir, { recursive: true });
     }
-    return join(agentsDir, 'state.json');
+    const statePath = join(agentsDir, 'state.json');
+    if (!existsSync(statePath)) {
+        writeFileSync(statePath, '{}', 'utf8');
+    }
+    return statePath;
 }
 &nbsp;
 /**
@@ -406,9 +417,7 @@ function read_state_unlocked(statePath: string): Record&lt;string, AgentState | 
  */
 export function read_state(repoRoot: string): Record&lt;string, AgentState | undefined&gt; {
     const statePath = get_state_file_path(repoRoot);
-    if (!existsSync(statePath)) {
-        return {};
-    }
+    // get_state_file_path now seeds the file so the lock target always exists.
     lockSync(statePath, { stale: 5000 });
     try {
         return read_state_unlocked(statePath);
@@ -481,7 +490,7 @@ export function is_process_running(pid: number | null | undefined) {
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-04-24T21:16:46.866Z
+                at 2026-04-24T23:09:44.803Z
             </div>
         <script src="../../prettify.js"></script>
         <script>

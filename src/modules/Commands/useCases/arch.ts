@@ -5,7 +5,7 @@ import { join } from 'path';
 import { red, cyan, bold, dim, yellow, green } from '../../Terminal/index.ts';
 import { get_repo_root } from '../../Workspace/index.ts';
 
-function findFiles(dir: string): string[] {
+export function findFiles(dir: string): string[] {
     let results: string[] = [];
     try {
         const entries = readdirSync(dir);
@@ -24,7 +24,7 @@ function findFiles(dir: string): string[] {
     return results;
 }
 
-function run(): number {
+export function run(): number {
     let repoRoot;
     try {
         repoRoot = get_repo_root();

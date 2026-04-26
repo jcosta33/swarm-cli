@@ -14,7 +14,7 @@ import {
 
 import { run_agent_launch } from './launch-agent.ts';
 
-function run(): number {
+export function run(): number {
     let repoRoot: string;
     try {
         repoRoot = get_repo_root();

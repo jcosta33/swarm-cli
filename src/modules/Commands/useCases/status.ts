@@ -20,7 +20,7 @@ function format_duration(startedAt: string, finishedAt?: string | null): string 
     return `${String(seconds)}s`;
 }
 
-function run(): number {
+export function run(): number {
     let repoRoot: string;
     try {
         repoRoot = get_repo_root();

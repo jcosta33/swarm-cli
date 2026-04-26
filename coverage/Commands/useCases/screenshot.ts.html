@@ -23,30 +23,30 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">76.19% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/21</span>
+                <span class='fraction'>16/21</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">62.5% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>0/8</span>
+                <span class='fraction'>5/8</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">100% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>0/1</span>
+                <span class='fraction'>1/1</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">76.19% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/21</span>
+                <span class='fraction'>16/21</span>
             </div>
         
             
@@ -61,7 +61,7 @@
             </div>
         </template>
     </div>
-    <div class='status-line low'></div>
+    <div class='status-line medium'></div>
     <pre><table class="coverage">
 <tr><td class="line-count quiet"><a name='L1'></a><a href='#L1'>1</a>
 <a name='L2'></a><a href='#L2'>2</a>
@@ -119,40 +119,40 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">#!/usr/bin/env node
@@ -163,42 +163,42 @@ import { red, green, cyan, bold, dim, parse_args } from '../../Terminal/index.ts
 import { get_repo_root } from '../../Workspace/index.ts';
 import { existsSync, mkdirSync } from 'fs';
 &nbsp;
-function <span class="fstat-no" title="function not covered" >run(): number {</span>
+export function run(): number {
     let repoRoot;
-<span class="cstat-no" title="statement not covered" >    try {</span>
-<span class="cstat-no" title="statement not covered" >        repoRoot = get_repo_root();</span>
+    try {
+        repoRoot = get_repo_root();
     } catch (_e) {
 <span class="cstat-no" title="statement not covered" >        console.error(red('Error: Not inside a git repository.'));</span>
 <span class="cstat-no" title="statement not covered" >        return 1;</span>
     }
 &nbsp;
-    const { <span class="cstat-no" title="statement not covered" >positional } = parse_args(process.argv.slice(2));</span>
-    const url = <span class="cstat-no" title="statement not covered" >positional[0] || 'http://localhost:3000';</span>
+    const { positional } = parse_args(process.argv.slice(2));
+    const url = positional[0] || 'http://localhost:3000';
     
-    const <span class="cstat-no" title="statement not covered" >screenshotsDir = join(repoRoot, '.agents', 'screenshots');</span>
-<span class="cstat-no" title="statement not covered" >    if (!existsSync(screenshotsDir)) {</span>
+    const screenshotsDir = join(repoRoot, '.agents', 'screenshots');
+    <span class="missing-if-branch" title="if path not taken" >I</span>if (!existsSync(screenshotsDir)) {
 <span class="cstat-no" title="statement not covered" >        mkdirSync(screenshotsDir, { recursive: true });</span>
     }
 &nbsp;
-    const fileName = <span class="cstat-no" title="statement not covered" >`capture-${String(Date.now())}.png`;</span>
-    const <span class="cstat-no" title="statement not covered" >outputPath = join(screenshotsDir, fileName);</span>
+    const fileName = `capture-${String(Date.now())}.png`;
+    const outputPath = join(screenshotsDir, fileName);
 &nbsp;
-<span class="cstat-no" title="statement not covered" >    console.log(cyan(`\nCapturing screenshot of ${bold(url)}...`));</span>
-<span class="cstat-no" title="statement not covered" >    console.log(dim(`Using Playwright via npx (this may take a moment on first run)...`));</span>
+    console.log(cyan(`\nCapturing screenshot of ${bold(url)}...`));
+    console.log(dim(`Using Playwright via npx (this may take a moment on first run)...`));
 &nbsp;
     // Run playwright screenshot tool natively via npx so we don't have to pollute package.json dependencies
-    const <span class="cstat-no" title="statement not covered" >res = spawnSync('npx', ['playwright', 'screenshot', url, outputPath], { stdio: 'inherit' });</span>
+    const res = spawnSync('npx', ['playwright', 'screenshot', url, outputPath], { stdio: 'inherit' });
 &nbsp;
-<span class="cstat-no" title="statement not covered" >    if (res.status === 0) {</span>
-<span class="cstat-no" title="statement not covered" >        console.log(green(`\n✓ Screenshot saved to: ${outputPath}`));</span>
-<span class="cstat-no" title="statement not covered" >        console.log(`(You can now pass this path to the LLM for visual validation against the UI spec)`);</span>
-    } else {
+    if (res.status === 0) {
+        console.log(green(`\n✓ Screenshot saved to: ${outputPath}`));
+        console.log(`(You can now pass this path to the LLM for visual validation against the UI spec)`);
+    } else <span class="missing-if-branch" title="else path not taken" >E</span>{
 <span class="cstat-no" title="statement not covered" >        console.log(red(`\n✗ Screenshot capture failed.`));</span>
     }
-<span class="cstat-no" title="statement not covered" >    return 0;</span>
+    return 0;
 }
 &nbsp;
-<span class="cstat-no" title="statement not covered" >if (import.meta.url === `file://${process.argv[1]}`) {</span>
+<span class="missing-if-branch" title="if path not taken" >I</span>if (import.meta.url === `file://${process.argv[1]}`) {
 <span class="cstat-no" title="statement not covered" >    process.exitCode = run();</span>
 }
 &nbsp;</pre></td></tr></table></pre>
@@ -208,7 +208,7 @@ function <span class="fstat-no" title="function not covered" >run(): number {</s
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-04-24T21:16:46.866Z
+                at 2026-04-24T23:09:44.803Z
             </div>
         <script src="../../prettify.js"></script>
         <script>

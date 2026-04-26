@@ -25,28 +25,28 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/74</span>
+                <span class='fraction'>0/64</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>0/54</span>
+                <span class='fraction'>0/48</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>0/6</span>
+                <span class='fraction'>0/5</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/68</span>
+                <span class='fraction'>0/60</span>
             </div>
         
             
@@ -247,8 +247,7 @@
 <a name='L182'></a><a href='#L182'>182</a>
 <a name='L183'></a><a href='#L183'>183</a>
 <a name='L184'></a><a href='#L184'>184</a>
-<a name='L185'></a><a href='#L185'>185</a>
-<a name='L186'></a><a href='#L186'>186</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L185'></a><a href='#L185'>185</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -284,23 +283,23 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -393,7 +392,6 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -420,12 +418,12 @@
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -467,7 +465,14 @@ import { existsSync, mkdirSync } from 'fs';
 import { join, resolve } from 'path';
 import { run_agent_launch } from './launch-agent.ts';
 &nbsp;
-function <span class="fstat-no" title="function not covered" >run(): number {</span>
+type CreateSandboxInput = {
+    slug: string;
+    title: string;
+    type?: string;
+    launch: boolean;
+};
+&nbsp;
+export function <span class="fstat-no" title="function not covered" >create_sandbox(i</span>nput: CreateSandboxInput): number {
     let repoRoot: string;
 <span class="cstat-no" title="statement not covered" >    try {</span>
 <span class="cstat-no" title="statement not covered" >        repoRoot = get_repo_root();</span>
@@ -477,16 +482,9 @@ function <span class="fstat-no" title="function not covered" >run(): number {</s
     }
 &nbsp;
     const <span class="cstat-no" title="statement not covered" >config = load_config(repoRoot);</span>
-    const { flags, <span class="cstat-no" title="statement not covered" >positional } = parse_args(process.argv.slice(2));</span>
+    const title = <span class="cstat-no" title="statement not covered" >input.title;</span>
 &nbsp;
-    let slug = <span class="cstat-no" title="statement not covered" >positional[0];</span>
-    const title = <span class="cstat-no" title="statement not covered" >positional.slice(1).join(' ');</span>
-&nbsp;
-<span class="cstat-no" title="statement not covered" >    if (!slug) {</span>
-<span class="cstat-no" title="statement not covered" >        return 1; // prompt_input is async, handled below</span>
-    }
-&nbsp;
-<span class="cstat-no" title="statement not covered" >    slug = to_slug(slug, config.slugMaxLen);</span>
+    let <span class="cstat-no" title="statement not covered" >slug = to_slug(input.slug, config.slugMaxLen);</span>
 &nbsp;
     const <span class="cstat-no" title="statement not covered" >repoName = get_repo_name(repoRoot);</span>
 &nbsp;
@@ -555,7 +553,7 @@ function <span class="fstat-no" title="function not covered" >run(): number {</s
         createdAt: new Date().toISOString(),
         status: 'active',
         taskFile: `.agents/tasks/${slug}.md`,
-        type: (flags.get('type') as string | undefined) ?? '',
+        type: input.type ?? '',
     };
 &nbsp;
 <span class="cstat-no" title="statement not covered" >    if (config.writeTaskTemplateOnCreate !== false) {</span>
@@ -578,8 +576,7 @@ function <span class="fstat-no" title="function not covered" >run(): number {</s
     );
 &nbsp;
     // Optionally launch agent
-    const shouldLaunch = <span class="cstat-no" title="statement not covered" >flags.get('launch') === true || flags.get('launch') === 'true';</span>
-<span class="cstat-no" title="statement not covered" >    if (shouldLaunch) {</span>
+<span class="cstat-no" title="statement not covered" >    if (input.launch) {</span>
 <span class="cstat-no" title="statement not covered" >        return run_agent_launch({ repoRoot, slug, worktreePath, title });</span>
     }
 &nbsp;
@@ -590,7 +587,7 @@ function <span class="fstat-no" title="function not covered" >run(): number {</s
 }
 &nbsp;
 async function <span class="fstat-no" title="function not covered" >main(): Promise&lt;number&gt; {</span>
-    const { <span class="cstat-no" title="statement not covered" >positional } = parse_args(process.argv.slice(2));</span>
+    const { positional, <span class="cstat-no" title="statement not covered" >flags } = parse_args(process.argv.slice(2));</span>
     let slug = <span class="cstat-no" title="statement not covered" >positional[0];</span>
     let title = <span class="cstat-no" title="statement not covered" >positional.slice(1).join(' ');</span>
 &nbsp;
@@ -605,12 +602,12 @@ async function <span class="fstat-no" title="function not covered" >main(): Prom
 <span class="cstat-no" title="statement not covered" >        title = await prompt_input('Task title: ', slug);</span>
     }
 &nbsp;
-    // Re-assemble argv so the sync run() can parse them normally
-    const extraArgs = <span class="cstat-no" title="statement not covered" >[];</span>
-<span class="cstat-no" title="statement not covered" >    if (title &amp;&amp; title !== slug) <span class="cstat-no" title="statement not covered" >extraArgs.push(title);</span></span>
-<span class="cstat-no" title="statement not covered" >    process.argv = [process.argv[0], process.argv[1], slug, ...extraArgs, ...process.argv.slice(2).<span class="fstat-no" title="function not covered" >filter((a</span>) =&gt; <span class="cstat-no" title="statement not covered" >a !== slug &amp;&amp; a !== title)];</span></span>
-&nbsp;
-<span class="cstat-no" title="statement not covered" >    return run();</span>
+<span class="cstat-no" title="statement not covered" >    return create_sandbox({</span>
+        slug,
+        title,
+        type: typeof flags.get('type') === 'string' ? (flags.get('type') as string) : undefined,
+        launch: flags.get('launch') === true || flags.get('launch') === 'true',
+    });
 }
 &nbsp;
 <span class="cstat-no" title="statement not covered" >if (import.meta.url === `file://${process.argv[1]}`) {</span>
@@ -625,7 +622,7 @@ async function <span class="fstat-no" title="function not covered" >main(): Prom
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-04-24T21:16:46.866Z
+                at 2026-04-24T23:09:44.803Z
             </div>
         <script src="../../prettify.js"></script>
         <script>

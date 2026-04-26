@@ -6,7 +6,7 @@ import { red, green, dim, parse_args, logger } from '../../Terminal/index.ts';
 import { get_repo_root } from '../../Workspace/index.ts';
 import { read_state } from '../../AgentState/index.ts';
 
-function run(): number {
+export function run(): number {
     let repoRoot: string;
     try {
         repoRoot = get_repo_root();

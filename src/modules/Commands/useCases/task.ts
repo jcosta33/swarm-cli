@@ -11,7 +11,7 @@ import { get_repo_root } from '../../Workspace/index.ts';
 import { appendFileSync, existsSync } from 'fs';
 import { join } from 'path';
 
-async function run(): Promise<number> {
+export async function run(): Promise<number> {
     let repoRoot: string;
     try {
         repoRoot = get_repo_root();

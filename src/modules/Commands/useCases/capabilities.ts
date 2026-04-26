@@ -3,7 +3,7 @@
 import { parse_args } from '../../Terminal/index.ts';
 import { list_capabilities } from '../index.ts';
 
-function run(): number {
+export function run(): number {
     const { flags } = parse_args(process.argv.slice(2));
     const asJson = flags.get('json') === true;
 

@@ -4,7 +4,7 @@ import { parse_args, red, green, dim } from '../../Terminal/index.ts';
 import { get_repo_root } from '../../Workspace/index.ts';
 import { claim_lock, list_locks, release_lock } from '../../AgentState/index.ts';
 
-function run(): number {
+export function run(): number {
     let repoRoot: string;
     try {
         repoRoot = get_repo_root();

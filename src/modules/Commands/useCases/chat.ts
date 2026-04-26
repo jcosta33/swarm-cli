@@ -5,7 +5,7 @@ import { join } from 'path';
 import { red, cyan, bold, dim, yellow, parse_args } from '../../Terminal/index.ts';
 import { get_repo_root } from '../../Workspace/index.ts';
 
-function run(): number {
+export function run(): number {
     let repoRoot;
     try {
         repoRoot = get_repo_root();

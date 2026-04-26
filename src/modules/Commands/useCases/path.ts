@@ -9,7 +9,7 @@ import {
     worktree_list,
 } from '../../Workspace/index.ts';
 
-function run(): number {
+export function run(): number {
     let repoRoot: string;
     try {
         repoRoot = get_repo_root();

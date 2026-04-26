@@ -10,7 +10,7 @@ import {
 import { is_process_running, read_state } from '../../AgentState/index.ts';
 import { get_repo_root, is_worktree_dirty, get_status_summary, worktree_list } from '../../Workspace/index.ts';
 
-function run(): number {
+export function run(): number {
     let repoRoot: string;
     try {
         repoRoot = get_repo_root();

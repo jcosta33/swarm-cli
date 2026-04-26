@@ -39,7 +39,7 @@ type CreateSandboxInput = {
     launch: boolean;
 };
 
-function create_sandbox(input: CreateSandboxInput): number {
+export function create_sandbox(input: CreateSandboxInput): number {
     let repoRoot: string;
     try {
         repoRoot = get_repo_root();

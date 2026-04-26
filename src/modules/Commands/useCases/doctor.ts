@@ -13,7 +13,7 @@ interface CheckResult {
     message: string;
 }
 
-function check_command(cmd: string, args: string[]): { ok: boolean; version: string } {
+export function check_command(cmd: string, args: string[]): { ok: boolean; version: string } {
     const res = spawnSync(cmd, args, { encoding: 'utf8' });
     if (res.status === 0) {
         return { ok: true, version: res.stdout.trim().split('\n')[0] };
