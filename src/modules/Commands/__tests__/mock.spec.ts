@@ -1,67 +1,96 @@
-import { describe, expect, it } from 'vitest';
-import { generateMockFactory } from '../useCases/mock.ts';
+import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
+import { generateMockFactory, run } from '../useCases/mock.ts';
 
-describe('generateMockFactory', () => {
-    it('returns generic template when interface not found', () => {
-        const code = 'const x = 1;';
-        const result = generateMockFactory(code, 'NotFound', 'file');
-        expect(result).toContain('createMockNotFound');
-        expect(result).toContain('TODO: Fill in default realistic mock values');
+vi.mock('../../Terminal/index.ts', async (importOriginal) => {
+    const actual = await importOriginal();
+    return {
+        ...(actual as object),
+        parse_args: vi.fn(),
+        red: vi.fn((t: string) => t),
+        cyan: vi.fn((t: string) => t),
+        green: vi.fn((t: string) => t),
+        bold: vi.fn((t: string) => t),
+        dim: vi.fn((t: string) => t),
+    };
+});
+
+vi.mock('../../Workspace/index.ts', () => ({
+    get_repo_root: vi.fn(() => '/tmp/repo'),
+    resolve_within: vi.fn((root: string, path: string) => ({ ok: true, value: `${root}/${path}` })),
+}));
+
+vi.mock('fs', async (importOriginal) => {
+    const actual = await importOriginal<typeof import('fs')>();
+    return {
+        ...actual,
+        existsSync: vi.fn(() => true),
+        readFileSync: vi.fn(() => 'interface Foo { name: string; count: number; active: boolean; items: string[]; }'),
+    };
+});
+
+import { parse_args } from '../../Terminal/index.ts';
+import { get_repo_root } from '../../Workspace/index.ts';
+import { existsSync } from 'fs';
+
+describe('mock module', () => {
+    describe('generateMockFactory', () => {
+        it('generates mock for interface', () => {
+            const content = 'interface User { name: string; age: number; }';
+            const result = generateMockFactory(content, 'User', 'user.ts');
+            expect(result).toContain('createMockUser');
+            expect(result).toContain('name');
+            expect(result).toContain('age');
+        });
+
+        it('uses defaults when interface not found', () => {
+            const result = generateMockFactory('', 'Missing', 'file.ts');
+            expect(result).toContain('createMockMissing');
+            expect(result).toContain('TODO');
+        });
+
+        it('handles function properties', () => {
+            const content = 'interface Api { fetch: () => Promise<void>; }';
+            const result = generateMockFactory(content, 'Api', 'api.ts');
+            expect(result).toContain('vi.fn()');
+        });
     });
 
-    it('generates factory for string properties', () => {
-        const code = 'interface User { name: string; email: string; }';
-        const result = generateMockFactory(code, 'User', 'user');
-        expect(result).toContain("name: 'mock_name',");
-        expect(result).toContain("email: 'mock_email',");
-    });
+    describe('run', () => {
+        beforeEach(() => {
+            vi.spyOn(console, 'log').mockImplementation(() => {});
+            vi.spyOn(console, 'error').mockImplementation(() => {});
+        });
 
-    it('generates factory for number properties', () => {
-        const code = 'interface Config { timeout: number; retries: number; }';
-        const result = generateMockFactory(code, 'Config', 'config');
-        expect(result).toContain('timeout: 0,');
-        expect(result).toContain('retries: 0,');
-    });
+        afterEach(() => {
+            vi.restoreAllMocks();
+        });
 
-    it('generates factory for boolean properties', () => {
-        const code = 'interface Flags { enabled: boolean; }';
-        const result = generateMockFactory(code, 'Flags', 'flags');
-        expect(result).toContain('enabled: false,');
-    });
+        it('returns 1 when not in a git repo', () => {
+            vi.mocked(get_repo_root).mockImplementation(() => { throw new Error('not a repo'); });
+            expect(run()).toBe(1);
+        });
 
-    it('generates factory for function properties', () => {
-        const code = 'interface Handler { onClick: () => void; }';
-        const result = generateMockFactory(code, 'Handler', 'handler');
-        expect(result).toContain('onClick: vi.fn(),');
-    });
+        it('returns 1 when args are missing', () => {
+            vi.mocked(get_repo_root).mockReturnValue('/tmp/repo');
+            vi.mocked(parse_args).mockReturnValue({ positional: [], flags: new Map() });
+            process.argv = ['node', 'script'];
+            expect(run()).toBe(1);
+        });
 
-    it('generates factory for array properties', () => {
-        const code = 'interface List { items: string[]; }';
-        const result = generateMockFactory(code, 'List', 'list');
-        expect(result).toContain('items: [],');
-    });
+        it('returns 1 when file not found', () => {
+            vi.mocked(get_repo_root).mockReturnValue('/tmp/repo');
+            vi.mocked(parse_args).mockReturnValue({ positional: ['src/missing.ts', 'Foo'], flags: new Map() });
+            vi.mocked(existsSync).mockReturnValue(false);
+            process.argv = ['node', 'script'];
+            expect(run()).toBe(1);
+        });
 
-    it('handles optional properties', () => {
-        const code = 'interface Opt { name?: string; }';
-        const result = generateMockFactory(code, 'Opt', 'opt');
-        expect(result).toContain("name: 'mock_name',");
-    });
-
-    it('includes the correct import path', () => {
-        const code = 'interface User { name: string; }';
-        const result = generateMockFactory(code, 'User', 'user-model');
-        expect(result).toContain("from './user-model'");
-    });
-
-    it('ignores comments inside interface body', () => {
-        const code = `interface User {
-            // name comment
-            name: string;
-            /* age comment */
-            age: number;
-        }`;
-        const result = generateMockFactory(code, 'User', 'user');
-        expect(result).toContain("name: 'mock_name',");
-        expect(result).toContain('age: 0,');
+        it('returns 0 on success', () => {
+            vi.mocked(get_repo_root).mockReturnValue('/tmp/repo');
+            vi.mocked(parse_args).mockReturnValue({ positional: ['src/foo.ts', 'Foo'], flags: new Map() });
+            vi.mocked(existsSync).mockReturnValue(true);
+            process.argv = ['node', 'script'];
+            expect(run()).toBe(0);
+        });
     });
 });

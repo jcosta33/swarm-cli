@@ -1,5 +1,23 @@
 {
     "extends": "./tsconfig.json",
-    "include": ["src", "vite-env.d.ts", "vite.config.ts"],
-    "exclude": ["dist", "build", "coverage", "storybook-static"]
+    "compilerOptions": {
+        "noEmit": true
+    },
+    "include": [
+        "src/**/*.ts",
+        "src/**/*.tsx",
+        "src/**/*.spec.ts",
+        "src/**/*.spec.tsx",
+        "src/**/*.test.ts",
+        "src/**/*.test.tsx",
+        "bin/**/*.js",
+        "eslint.config.mjs",
+        "eslint.fast.config.mjs"
+    ],
+    "exclude": [
+        "dist",
+        "build",
+        "coverage",
+        "node_modules"
+    ]
 }

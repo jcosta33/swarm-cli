@@ -11,7 +11,7 @@ function run_and_truncate(commandStr: string, args: string[], cwd: string) {
     console.log(`\n${bold(cyan('>'))} ${commandStr} ${args.join(' ')}`);
 
     const result = spawnSync(commandStr, args, {
-        cwd: cwd,
+        cwd,
         encoding: 'utf8',
         shell: process.platform === 'win32',
     });

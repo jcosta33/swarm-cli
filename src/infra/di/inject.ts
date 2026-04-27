@@ -1,6 +1,6 @@
-import { Container } from './Container';
-import { registrations, cache, testOverrides } from './internal/containerState';
-import { type DependencyKey } from './types';
+import { Container } from './Container.ts';
+import { registrations, cache, testOverrides } from './internal/containerState.ts';
+import { type DependencyKey } from './types.ts';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any -- TFactoryReturn constraint; DI machinery requires universal function compatibility
 type ResolveDependency<TDep> = TDep extends new (...args: any[]) => infer TInstance ? TInstance : TDep;
@@ -38,7 +38,15 @@ function getDependencyToken<TDeps extends Record<string, unknown>>(
         return deps[key];
     }
 
-    return Object.getOwnPropertyDescriptor(deps, key)?.get ?? deps[key];
+    // We want the getter *function* itself as the dependency token (used as a
+    // map key via referential identity). It is never `.call()`-ed here, so the
+    // unbound-`this` warning does not apply to this usage.
+    const descriptor = Object.getOwnPropertyDescriptor(deps, key);
+    if (descriptor?.get) {
+        // eslint-disable-next-line @typescript-eslint/unbound-method -- token identity, not invocation
+        return descriptor.get;
+    }
+    return deps[key];
 }
 
 function getDependencyOverride(dependencyToken: unknown): { hasOverride: boolean; override: unknown } {
@@ -114,7 +122,7 @@ export function inject<TDeps extends Record<string, unknown>>(deps: TDeps, optio
 
                 try {
                     const resolvedDeps: Record<string, unknown> = {};
-                    for (const key of Object.keys(deps) as Array<keyof TDeps>) {
+                    for (const key of Object.keys(deps) as (keyof TDeps)[]) {
                         const dependencyToken = getDependencyToken(deps, key, options);
                         const { hasOverride, override } = getDependencyOverride(dependencyToken);
                         if (hasOverride) {
@@ -141,7 +149,11 @@ export function inject<TDeps extends Record<string, unknown>>(deps: TDeps, optio
         invoker._factory = factory;
         invoker._options = options;
 
-        // eslint-disable-next-line sourdaw/no-type-assertion-escape -- DI invoker function carries extra properties; cast through unknown is required because the intersection type cannot be structurally proven
+        // ts-expect-error: DI invoker carries the InjectableFunction metadata
+        // alongside the dynamic factory shape. The intersection cannot be
+        // proven structurally, so we cast through `unknown` once at this
+        // boundary and rely on the public `inject<TDeps>` overloads above to
+        // give consumers a sound surface.
         return invoker as unknown as TFactoryReturn & InjectableFunction;
     };
 }

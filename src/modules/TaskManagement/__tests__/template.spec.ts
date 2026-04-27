@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { render_template, build_metadata_block, create_or_update_task_file } from '../useCases/template.ts';
-import { mkdtempSync, writeFileSync, readFileSync, rmSync } from 'fs';
-import { join, tmpdir } from 'path';
+import { mkdtempSync, writeFileSync, readFileSync, rmSync, mkdirSync } from 'fs';
+import { join } from 'path';
+import { tmpdir } from 'os';
 
 describe('template', () => {
     describe('render_template', () => {
@@ -44,6 +45,7 @@ describe('template', () => {
             const tmpDir = mkdtempSync(join(tmpdir(), 'swarm-test-'));
             const taskFile = join(tmpDir, 'task.md');
             const templateDir = join(tmpDir, 'templates');
+            mkdirSync(templateDir, { recursive: true });
             writeFileSync(join(templateDir, 'task.md'), '# {{title}}', 'utf8');
 
             create_or_update_task_file(taskFile, templateDir, { title: 'Test', slug: 'test', agent: 'claude', branch: 'agent/test', baseBranch: 'main', worktreePath: '/tmp', createdAt: '2024-01-01' });

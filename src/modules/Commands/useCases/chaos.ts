@@ -32,7 +32,7 @@ export function run(): number {
         envContent = envContent.split('\n').filter(l => !l.startsWith('VITE_CHAOS_')).join('\n');
         
         envContent += `\nVITE_CHAOS_LATENCY=${delay}\nVITE_CHAOS_FAIL_RATE=${failRate}\n`;
-        writeFileSync(envFile, envContent.trim() + '\n', 'utf8');
+        writeFileSync(envFile, `${envContent.trim()}\n`, 'utf8');
         
         console.log(yellow(`⚠ Chaos Monkey INJECTED.`));
         console.log(dim(`- Latency: ${delay}ms`));
@@ -43,7 +43,7 @@ export function run(): number {
         if (existsSync(envFile)) {
             let envContent = readFileSync(envFile, 'utf8');
             envContent = envContent.split('\n').filter(l => !l.startsWith('VITE_CHAOS_')).join('\n');
-            writeFileSync(envFile, envContent.trim() + '\n', 'utf8');
+            writeFileSync(envFile, `${envContent.trim()}\n`, 'utf8');
         }
         console.log(green(`✓ Chaos Monkey STOPPED.`));
         console.log(dim(`Development environment returned to normal.`));

@@ -15,15 +15,23 @@ vi.mock('../useCases/launch-agent.ts', () => ({
 }));
 
 import { find_worktree_for_branch } from '../../Workspace/index.ts';
+import { get_repo_root } from '../../Workspace/index.ts';
 
-describe('open', () => {
+describe("open", () => {
     beforeEach(() => {
+        vi.resetAllMocks();
         vi.spyOn(console, 'log').mockImplementation(() => {});
         vi.spyOn(console, 'error').mockImplementation(() => {});
     });
 
     afterEach(() => {
         vi.restoreAllMocks();
+    });
+
+    it('returns 1 when not in a git repo', () => {
+        vi.mocked(get_repo_root).mockImplementation(() => { throw new Error('not a repo'); });
+        process.argv = ['node', 'script'];
+        expect(run()).toBe(1);
     });
 
     it('returns 1 when slug is missing', () => {

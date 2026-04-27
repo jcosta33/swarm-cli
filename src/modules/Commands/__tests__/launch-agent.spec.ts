@@ -150,7 +150,7 @@ describe('launch_agent', () => {
         (check_backend as ReturnType<typeof vi.fn>).mockReturnValue({ ok: true });
         (get_adapter as ReturnType<typeof vi.fn>).mockReturnValue({
             command: 'kimi',
-            build_args: build_args,
+            build_args,
         });
         (launch as ReturnType<typeof vi.fn>).mockReturnValue(0);
 

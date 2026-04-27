@@ -55,7 +55,12 @@ export function run(): number {
 
     // State section
     if (state) {
-        const statusColor = state.status === 'running' ? green : state.status === 'error' ? red : yellow;
+        let statusColor = yellow;
+        if (state.status === 'running') {
+            statusColor = green;
+        } else if (state.status === 'error') {
+            statusColor = red;
+        }
         logger.raw(`${bold('State:')} ${statusColor(state.status ?? 'unknown')}`);
         if (state.agent) logger.raw(`${bold('Agent:')} ${state.agent}`);
         if (state.pid) {
@@ -109,11 +114,14 @@ export function run(): number {
         for (const session of sessions.slice(0, 5)) {
             const duration = format_duration(session.started_at, session.finished_at);
             const agent = session.agent;
-            const status = session.exit_code === null
-                ? yellow('running')
-                : session.exit_code === 0
-                    ? green('success')
-                    : red(`failed (${String(session.exit_code)})`);
+            let status: string;
+            if (session.exit_code === null) {
+                status = yellow('running');
+            } else if (session.exit_code === 0) {
+                status = green('success');
+            } else {
+                status = red(`failed (${String(session.exit_code)})`);
+            }
             logger.raw(`  ${dim(session.started_at)} | ${agent.padEnd(10)} | ${duration.padStart(6)} | ${status}`);
         }
     }

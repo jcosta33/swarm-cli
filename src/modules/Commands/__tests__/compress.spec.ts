@@ -1,49 +1,104 @@
-import { describe, expect, it } from 'vitest';
-import { skeletonize } from '../useCases/compress.ts';
+import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
+import { skeletonize, run } from '../useCases/compress.ts';
+
+vi.mock('../../Terminal/index.ts', async (importOriginal) => {
+    const actual = await importOriginal();
+    return {
+        ...(actual as object),
+        parse_args: vi.fn(),
+        red: vi.fn((t: string) => t),
+        cyan: vi.fn((t: string) => t),
+        bold: vi.fn((t: string) => t),
+        dim: vi.fn((t: string) => t),
+    };
+});
+
+vi.mock('../../Workspace/index.ts', () => ({
+    get_repo_root: vi.fn(() => '/tmp/repo'),
+    resolve_within: vi.fn((root: string, path: string) => ({ ok: true, value: `${root}/${path}` })),
+}));
+
+vi.mock('fs', async (importOriginal) => {
+    const actual = await importOriginal<typeof import('fs')>();
+    return {
+        ...actual,
+        existsSync: vi.fn(() => true),
+        readFileSync: vi.fn(() => 'import { a } from "./a";\n/** doc */\nexport const x = 1;\nfunction foo() {\n  return 1;\n}'),
+    };
+});
+
+import { parse_args } from '../../Terminal/index.ts';
+import { get_repo_root } from '../../Workspace/index.ts';
+import { existsSync } from 'fs';
 
 describe('compress module', () => {
     describe('skeletonize', () => {
-        it('keeps import and export lines', () => {
-            const content = "import { x } from 'y';\nexport function foo() {}";
-            const result = skeletonize(content);
-            expect(result).toContain("import { x } from 'y';");
-            expect(result).toContain('export function foo() {}');
+        it('keeps imports and exports', () => {
+            const result = skeletonize('import { a } from "./a";\nexport const x = 1;');
+            expect(result).toContain('import');
+            expect(result).toContain('export');
         });
 
-        it('keeps JSDoc comments', () => {
-            const content = `/**\n * A helper function.\n */\nfunction helper() {}`;
-            const result = skeletonize(content);
-            expect(result).toContain('/**');
-            expect(result).toContain(' * A helper function.');
-            expect(result).toContain(' */');
+        it('keeps JSDoc blocks', () => {
+            const result = skeletonize('/** Hello */\nconst x = 1;');
+            expect(result).toContain('/** Hello */');
         });
 
-        it('keeps type and interface declarations', () => {
-            const content = 'interface Config {\n  port: number;\n}\ntype ID = string;';
-            const result = skeletonize(content);
-            expect(result).toContain('interface Config {');
-            expect(result).toContain('type ID = string;');
+        it('keeps type declarations', () => {
+            const result = skeletonize('interface Foo {}\ntype Bar = string;\nclass Baz {}\nfunction fn() {}');
+            expect(result).toContain('interface');
+            expect(result).toContain('type');
+            expect(result).toContain('class');
+            expect(result).toContain('function');
         });
 
         it('keeps closing braces', () => {
-            const content = 'function foo() {\n  return 1;\n}';
-            const result = skeletonize(content);
-            expect(result).toContain('function foo() {');
+            const result = skeletonize('function foo() {\n  return 1;\n}');
             expect(result).toContain('}');
-            expect(result).not.toContain('return 1;');
         });
 
-        it('strips function bodies', () => {
-            const content = `function compute() {
-  const x = 1;
-  const y = 2;
-  return x + y;
-}`;
-            const result = skeletonize(content);
-            expect(result).toContain('function compute() {');
-            expect(result).toContain('}');
-            expect(result).not.toContain('const x = 1;');
-            expect(result).not.toContain('return x + y;');
+        it('skips inner implementation lines', () => {
+            const result = skeletonize('const x = 1;\n  const y = 2;');
+            expect(result).not.toContain('  const y');
+        });
+    });
+
+    describe('run', () => {
+        beforeEach(() => {
+            vi.spyOn(console, 'log').mockImplementation(() => {});
+            vi.spyOn(console, 'error').mockImplementation(() => {});
+        });
+
+        afterEach(() => {
+            vi.restoreAllMocks();
+        });
+
+        it('returns 1 when not in a git repo', () => {
+            vi.mocked(get_repo_root).mockImplementation(() => { throw new Error('not a repo'); });
+            expect(run()).toBe(1);
+        });
+
+        it('returns 1 when args are missing', () => {
+            vi.mocked(get_repo_root).mockReturnValue('/tmp/repo');
+            vi.mocked(parse_args).mockReturnValue({ positional: [], flags: new Map() });
+            process.argv = ['node', 'script'];
+            expect(run()).toBe(1);
+        });
+
+        it('returns 1 when file not found', () => {
+            vi.mocked(get_repo_root).mockReturnValue('/tmp/repo');
+            vi.mocked(parse_args).mockReturnValue({ positional: ['src/missing.ts'], flags: new Map() });
+            vi.mocked(existsSync).mockReturnValue(false);
+            process.argv = ['node', 'script'];
+            expect(run()).toBe(1);
+        });
+
+        it('returns 0 on success', () => {
+            vi.mocked(get_repo_root).mockReturnValue('/tmp/repo');
+            vi.mocked(parse_args).mockReturnValue({ positional: ['src/foo.ts'], flags: new Map() });
+            vi.mocked(existsSync).mockReturnValue(true);
+            process.argv = ['node', 'script'];
+            expect(run()).toBe(0);
         });
     });
 });

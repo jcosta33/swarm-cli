@@ -64,7 +64,7 @@ export function run(): number {
                 }
 
                 violations++;
-                console.log(red(`✗ Architectural Violation in `) + bold(file.replace(repoRoot + '/', '')));
+                console.log(`${red('✗ Architectural Violation in ')}${bold(file.replace(`${repoRoot}/`, ''))}`);
                 console.log(`  Line ${String(i + 1)}: Cross-module import into private internal ${yellow(`'${folder}/'`)}`);
                 console.log(dim(`  > ${line.trim()}`));
                 console.log(dim(`  Fix: Target the module's root index.ts instead.\n`));

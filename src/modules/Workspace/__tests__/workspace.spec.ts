@@ -202,7 +202,7 @@ branch refs/heads/agent/feature
         });
     });
 
-    describe('delete_branch', () => {
+    describe('delete_branch (basic spawn shape)', () => {
         it('deletes branch with -d by default', () => {
             (spawnSync as ReturnType<typeof vi.fn>).mockReturnValue({ status: 0 });
             delete_branch('old-feature', '/repo');
@@ -250,11 +250,15 @@ branch refs/heads/agent/feature
     });
 
     describe('worktree_create', () => {
-        it('creates worktree for existing branch', () => {
+        it('creates worktree for existing branch and returns Ok', () => {
             (spawnSync as ReturnType<typeof vi.fn>)
                 .mockReturnValueOnce({ status: 0 }) // branch_exists = true
                 .mockReturnValueOnce({ status: 0 }); // worktree add
-            worktree_create('/repo--feature', 'agent/feature', 'main', '/repo');
+            const result = worktree_create('/repo--feature', 'agent/feature', 'main', '/repo');
+            expect(result.ok).toBe(true);
+            if (result.ok) {
+                expect(result.value).toEqual({ path: '/repo--feature', branch: 'agent/feature' });
+            }
             const calls = (spawnSync as ReturnType<typeof vi.fn>).mock.calls;
             const lastCall = calls[calls.length - 1];
             expect(lastCall).toEqual(['git', ['worktree', 'add', '/repo--feature', 'agent/feature'], { cwd: '/repo', encoding: 'utf8' }]);
@@ -264,24 +268,107 @@ branch refs/heads/agent/feature
             (spawnSync as ReturnType<typeof vi.fn>)
                 .mockReturnValueOnce({ status: 1 }) // branch_exists = false
                 .mockReturnValueOnce({ status: 0 }); // worktree add -b
-            worktree_create('/repo--feature', 'agent/feature', 'main', '/repo');
+            const result = worktree_create('/repo--feature', 'agent/feature', 'main', '/repo');
+            expect(result.ok).toBe(true);
             const calls = (spawnSync as ReturnType<typeof vi.fn>).mock.calls;
             const lastCall = calls[calls.length - 1];
             expect(lastCall).toEqual(['git', ['worktree', 'add', '-b', 'agent/feature', '/repo--feature', 'main'], { cwd: '/repo', encoding: 'utf8' }]);
         });
+
+        it('returns a tagged WorktreeCreateFailed error when git fails', () => {
+            (spawnSync as ReturnType<typeof vi.fn>)
+                .mockReturnValueOnce({ status: 1 }) // branch_exists = false
+                .mockReturnValueOnce({ status: 128, stderr: "fatal: '/repo--feature' already exists" });
+            const result = worktree_create('/repo--feature', 'agent/feature', 'main', '/repo');
+            expect(result.ok).toBe(false);
+            if (!result.ok) {
+                expect(result.error._tag).toBe('WorktreeCreateFailed');
+                expect(result.error.worktreePath).toBe('/repo--feature');
+                expect(result.error.branch).toBe('agent/feature');
+                expect(result.error.baseBranch).toBe('main');
+                expect(result.error.stderr).toContain('already exists');
+            }
+        });
+
+        it('captures spawn-level errors as WorktreeCreateFailed', () => {
+            const spawnError = Object.assign(new Error('git not found'), { code: 'ENOENT' });
+            (spawnSync as ReturnType<typeof vi.fn>)
+                .mockReturnValueOnce({ status: 1 }) // branch_exists = false
+                .mockReturnValueOnce({ error: spawnError, status: null });
+            const result = worktree_create('/repo--feature', 'agent/feature', 'main', '/repo');
+            expect(result.ok).toBe(false);
+            if (!result.ok) {
+                expect(result.error._tag).toBe('WorktreeCreateFailed');
+                expect(result.error.message).toContain('git not found');
+            }
+        });
     });
 
     describe('worktree_remove', () => {
-        it('removes worktree without force', () => {
+        it('removes worktree without force and returns Ok', () => {
             (spawnSync as ReturnType<typeof vi.fn>).mockReturnValue({ status: 0 });
-            worktree_remove('/repo--feature', false, '/repo');
+            const result = worktree_remove('/repo--feature', false, '/repo');
+            expect(result.ok).toBe(true);
+            if (result.ok) {
+                expect(result.value).toEqual({ path: '/repo--feature' });
+            }
             expect(spawnSync).toHaveBeenLastCalledWith('git', ['worktree', 'remove', '/repo--feature'], { cwd: '/repo', encoding: 'utf8' });
         });
 
         it('removes worktree with force', () => {
             (spawnSync as ReturnType<typeof vi.fn>).mockReturnValue({ status: 0 });
-            worktree_remove('/repo--feature', true, '/repo');
+            const result = worktree_remove('/repo--feature', true, '/repo');
+            expect(result.ok).toBe(true);
             expect(spawnSync).toHaveBeenLastCalledWith('git', ['worktree', 'remove', '--force', '/repo--feature'], { cwd: '/repo', encoding: 'utf8' });
+        });
+
+        it('returns a tagged WorktreeRemoveFailed error when git refuses', () => {
+            (spawnSync as ReturnType<typeof vi.fn>).mockReturnValue({
+                status: 128,
+                stderr: "fatal: '/repo--feature' contains modified or untracked files",
+            });
+            const result = worktree_remove('/repo--feature', false, '/repo');
+            expect(result.ok).toBe(false);
+            if (!result.ok) {
+                expect(result.error._tag).toBe('WorktreeRemoveFailed');
+                expect(result.error.worktreePath).toBe('/repo--feature');
+                expect(result.error.force).toBe(false);
+                expect(result.error.stderr).toContain('contains modified');
+            }
+        });
+    });
+
+    describe('delete_branch', () => {
+        it('deletes branch and returns Ok', () => {
+            (spawnSync as ReturnType<typeof vi.fn>).mockReturnValue({ status: 0 });
+            const result = delete_branch('agent/feature', '/repo', false);
+            expect(result.ok).toBe(true);
+            if (result.ok) {
+                expect(result.value).toEqual({ branch: 'agent/feature' });
+            }
+            expect(spawnSync).toHaveBeenLastCalledWith('git', ['branch', '-d', 'agent/feature'], { cwd: '/repo', encoding: 'utf8' });
+        });
+
+        it('uses -D when force is true', () => {
+            (spawnSync as ReturnType<typeof vi.fn>).mockReturnValue({ status: 0 });
+            const result = delete_branch('agent/feature', '/repo', true);
+            expect(result.ok).toBe(true);
+            expect(spawnSync).toHaveBeenLastCalledWith('git', ['branch', '-D', 'agent/feature'], { cwd: '/repo', encoding: 'utf8' });
+        });
+
+        it('returns a tagged DeleteBranchFailed error when git refuses', () => {
+            (spawnSync as ReturnType<typeof vi.fn>).mockReturnValue({
+                status: 1,
+                stderr: 'error: branch not fully merged',
+            });
+            const result = delete_branch('agent/feature', '/repo', false);
+            expect(result.ok).toBe(false);
+            if (!result.ok) {
+                expect(result.error._tag).toBe('DeleteBranchFailed');
+                expect(result.error.branch).toBe('agent/feature');
+                expect(result.error.force).toBe(false);
+                expect(result.error.stderr).toContain('not fully merged');
+            }
         });
     });
 

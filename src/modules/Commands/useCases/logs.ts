@@ -1,12 +1,13 @@
 #!/usr/bin/env node
 
-import { parse_args, red, green, dim, logger } from '../../Terminal/index.ts';
+import { parse_args, red, green, dim, logger, cyan } from '../../Terminal/index.ts';
 import { get_repo_root } from '../../Workspace/index.ts';
 import {
     prune_events,
     prune_sessions,
     query_sessions,
-} from '../../AgentState/services/telemetry.ts';
+    read_events,
+} from '../../AgentState/index.ts';
 
 export function run(): number {
     let repoRoot: string;
@@ -22,7 +23,12 @@ export function run(): number {
     const agent = flags.get('agent') as string | undefined;
     const slug = flags.get('slug') as string | undefined;
     const follow = flags.get('follow') === true;
+    const showEvents = flags.get('events') === true;
     const pruneDaysRaw = flags.get('prune') as string | undefined;
+
+    if (showEvents) {
+        return run_events_view(repoRoot, { follow, asJson, eventFilter: agent, slugFilter: slug });
+    }
 
     if (pruneDaysRaw !== undefined) {
         const days = parseInt(pruneDaysRaw, 10);
@@ -94,6 +100,71 @@ export function run(): number {
     }
 
     logger.raw(`\nTotal: ${String(filtered.length)} sessions\n`);
+    return 0;
+}
+
+type RunEventsViewInput = {
+    follow: boolean;
+    asJson: boolean;
+    eventFilter?: string;
+    slugFilter?: string;
+};
+
+function format_event_line(entry: ReturnType<typeof read_events>[number]): string {
+    const slug = (entry.payload.slug as string | undefined) ?? '';
+    const slugCol = slug.padEnd(20);
+    return `  ${dim(entry.timestamp)}  ${cyan(entry.event.padEnd(24))}  ${slugCol}  ${dim(JSON.stringify(entry.payload))}`;
+}
+
+function run_events_view(repoRoot: string, input: RunEventsViewInput): number {
+    const filterEntry = (entry: ReturnType<typeof read_events>[number]) => {
+        if (input.eventFilter && !entry.event.startsWith(input.eventFilter)) {
+            return false;
+        }
+        if (input.slugFilter && entry.payload.slug !== input.slugFilter) {
+            return false;
+        }
+        return true;
+    };
+
+    if (input.follow) {
+        logger.info(dim('Following event stream (Ctrl+C to stop)...\n'));
+        let lastCount = 0;
+        const poll = () => {
+            const latest = read_events(repoRoot, 0);
+            const filtered = latest.filter(filterEntry);
+            if (filtered.length > lastCount) {
+                for (const entry of filtered.slice(lastCount)) {
+                    logger.raw(format_event_line(entry));
+                }
+                lastCount = filtered.length;
+            }
+        };
+        poll();
+        const interval = setInterval(poll, 1000);
+        process.on('SIGINT', () => {
+            clearInterval(interval);
+            logger.raw('');
+        });
+        return 0;
+    }
+
+    const events = read_events(repoRoot, 50).filter(filterEntry);
+    if (events.length === 0) {
+        logger.info(dim('No events recorded yet.'));
+        return 0;
+    }
+
+    if (input.asJson) {
+        logger.raw(JSON.stringify(events, null, 2));
+        return 0;
+    }
+
+    logger.raw('Recent events:\n');
+    for (const entry of events) {
+        logger.raw(format_event_line(entry));
+    }
+    logger.raw(`\nTotal: ${String(events.length)} events\n`);
     return 0;
 }
 

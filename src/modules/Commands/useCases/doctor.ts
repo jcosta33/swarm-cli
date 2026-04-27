@@ -7,11 +7,11 @@ import { cyan, green, red, bold, dim } from '../../Terminal/index.ts';
 import { get_repo_root, worktree_list } from '../../Workspace/index.ts';
 import { read_state } from '../../AgentState/index.ts';
 
-interface CheckResult {
+type CheckResult = {
     label: string;
     ok: boolean;
     message: string;
-}
+};
 
 export function check_command(cmd: string, args: string[]): { ok: boolean; version: string } {
     const res = spawnSync(cmd, args, { encoding: 'utf8' });

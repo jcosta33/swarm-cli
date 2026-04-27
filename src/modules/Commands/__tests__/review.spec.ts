@@ -31,4 +31,21 @@ describe('review', () => {
         process.argv = ['node', 'script', 'feature-branch'];
         expect(run()).toBe(0);
     });
+
+    it('returns 1 when branch does not exist', () => {
+        vi.mocked(spawnSync).mockReturnValue({ status: 1, stdout: '', stderr: '' } as ReturnType<typeof spawnSync>);
+        process.argv = ['node', 'script', 'missing-branch'];
+        expect(run()).toBe(1);
+    });
+
+    it('returns 1 when reviewer spawn fails', () => {
+        let callCount = 0;
+        vi.mocked(spawnSync).mockImplementation(() => {
+            callCount++;
+            if (callCount === 1) return { status: 0, stdout: 'abc123', stderr: '' } as ReturnType<typeof spawnSync>;
+            return { status: 1, stdout: '', stderr: '' } as ReturnType<typeof spawnSync>;
+        });
+        process.argv = ['node', 'script', 'feature-branch'];
+        expect(run()).toBe(1);
+    });
 });

@@ -31,6 +31,7 @@ import {
 import { existsSync, mkdirSync } from 'fs';
 import { join, resolve } from 'path';
 import { run_agent_launch } from './launch-agent.ts';
+import { swarmBus } from '../../../infra/events/swarmBus.ts';
 
 type CreateSandboxInput = {
     slug: string;
@@ -91,14 +92,12 @@ export function create_sandbox(input: CreateSandboxInput): number {
 
     // Create worktree
     logger.info(cyan(`\nCreating worktree for ${bold(slug)}...`));
-    try {
-        worktree_create(worktreePath, branch, config.defaultBaseBranch ?? 'main', repoRoot);
-        success(`Worktree created: ${worktreePath}`);
-    } catch (_e: unknown) {
-        const e = _e instanceof Error ? _e : new Error(String(_e));
-        logger.error(red(`Failed to create worktree: ${e.message}`));
+    const createResult = worktree_create(worktreePath, branch, config.defaultBaseBranch ?? 'main', repoRoot);
+    if (!createResult.ok) {
+        logger.error(red(createResult.error.message));
         return 1;
     }
+    success(`Worktree created: ${worktreePath}`);
 
     // Ensure .agents directories exist inside the worktree
     const agentsDir = join(worktreePath, '.agents');
@@ -135,6 +134,8 @@ export function create_sandbox(input: CreateSandboxInput): number {
         agent: config.defaultAgent ?? 'claude',
     });
 
+    void swarmBus.emit('sandbox.created', { repoRoot, slug, branch, worktreePath });
+
     logger.raw(
         cyan(`\nSandbox "${bold(slug)}" is ready.\n`) +
             dim(`  Branch:     ${branch}\n`) +
@@ -153,7 +154,7 @@ export function create_sandbox(input: CreateSandboxInput): number {
     return 0;
 }
 
-async function main(): Promise<number> {
+export async function main(): Promise<number> {
     const { positional, flags } = parse_args(process.argv.slice(2));
     let slug = positional[0];
     let title = positional.slice(1).join(' ');

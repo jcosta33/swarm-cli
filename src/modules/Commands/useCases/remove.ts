@@ -10,6 +10,7 @@ import {
     yellow,
 } from '../../Terminal/index.ts';
 import { remove_state } from '../../AgentState/index.ts';
+import { swarmBus } from '../../../infra/events/swarmBus.ts';
 import {
     delete_branch,
     get_repo_root,
@@ -58,25 +59,25 @@ export function run(): number {
         return 1;
     }
 
-    try {
-        worktree_remove(match.path, true, repoRoot);
-        console.log(green('✓ Worktree removed.'));
-    } catch (_e: unknown) {
-        const e = _e instanceof Error ? _e : new Error(String(_e));
-        console.error(red(`Failed to remove worktree: ${e.message}`));
+    const removeResult = worktree_remove(match.path, true, repoRoot);
+    if (!removeResult.ok) {
+        console.error(red(removeResult.error.message));
         return 1;
     }
+    console.log(green('✓ Worktree removed.'));
 
-    try {
-        delete_branch(match.branch ?? `agent/${slug}`, repoRoot, true);
+    const deleteResult = delete_branch(match.branch ?? `agent/${slug}`, repoRoot, true);
+    if (deleteResult.ok) {
         console.log(green('✓ Branch deleted.'));
-    } catch (_e: unknown) {
-        const e = _e instanceof Error ? _e : new Error(String(_e));
-        logger.warn(yellow(`Warning: could not delete branch: ${e.message}`));
+    } else {
+        logger.warn(yellow(`Warning: could not delete branch: ${deleteResult.error.message}`));
     }
 
     remove_state(repoRoot, slug);
     console.log(green(`✓ State cleared for "${bold(slug)}".`));
+
+    void swarmBus.emit('sandbox.removed', { repoRoot, slug });
+
     return 0;
 }
 

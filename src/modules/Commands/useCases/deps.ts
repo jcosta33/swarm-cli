@@ -7,10 +7,10 @@ import { spawnSync } from 'child_process';
 import { existsSync, mkdirSync, writeFileSync } from 'fs';
 import { join } from 'path';
 
-interface OutdatedInfo {
+type OutdatedInfo = {
     current?: string;
     latest?: string;
-}
+};
 
 export function run(): number {
     let repoRoot: string;

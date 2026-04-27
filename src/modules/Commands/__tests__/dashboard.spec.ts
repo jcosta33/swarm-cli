@@ -230,4 +230,236 @@ describe('run_dashboard', () => {
             expect.anything()
         );
     });
+
+    it('spawns show command', async () => {
+        (get_repo_root as ReturnType<typeof vi.fn>).mockReturnValue('/repo');
+        (worktree_list as ReturnType<typeof vi.fn>).mockReturnValue([
+            { path: '/repo--foo', head: 'abc', branch: 'agent/foo', bare: false },
+        ]);
+        (read_state as ReturnType<typeof vi.fn>).mockReturnValue({});
+        (clack.select as ReturnType<typeof vi.fn>)
+            .mockResolvedValueOnce('show')
+            .mockResolvedValueOnce('foo')
+            .mockResolvedValueOnce('exit');
+        (clack.confirm as ReturnType<typeof vi.fn>).mockResolvedValue(true);
+        (clack.isCancel as unknown as ReturnType<typeof vi.fn>).mockReturnValue(false);
+        (spawnSync as ReturnType<typeof vi.fn>).mockReturnValue({ status: 0 });
+
+        await run_dashboard();
+
+        expect(spawnSync).toHaveBeenCalledWith(
+            process.execPath,
+            expect.arrayContaining([
+                '--experimental-strip-types',
+                expect.stringContaining('show.ts'),
+                'foo',
+            ]),
+            { stdio: 'inherit', cwd: '/repo' }
+        );
+    });
+
+    it('warns when no sandboxes for show', async () => {
+        (get_repo_root as ReturnType<typeof vi.fn>).mockReturnValue('/repo');
+        (worktree_list as ReturnType<typeof vi.fn>).mockReturnValue([
+            { path: '/repo', head: 'abc', branch: 'main', bare: false },
+        ]);
+        (read_state as ReturnType<typeof vi.fn>).mockReturnValue({});
+        (clack.select as ReturnType<typeof vi.fn>)
+            .mockResolvedValueOnce('show')
+            .mockResolvedValueOnce('exit');
+        (clack.confirm as ReturnType<typeof vi.fn>).mockResolvedValue(true);
+        (clack.isCancel as unknown as ReturnType<typeof vi.fn>).mockReturnValue(false);
+
+        await run_dashboard();
+
+        expect(clack.log.warn).toHaveBeenCalledWith('No sandboxes to show.');
+    });
+
+    it('spawns status command', async () => {
+        (get_repo_root as ReturnType<typeof vi.fn>).mockReturnValue('/repo');
+        (worktree_list as ReturnType<typeof vi.fn>).mockReturnValue([
+            { path: '/repo--foo', head: 'abc', branch: 'agent/foo', bare: false },
+        ]);
+        (read_state as ReturnType<typeof vi.fn>).mockReturnValue({});
+        (clack.select as ReturnType<typeof vi.fn>)
+            .mockResolvedValueOnce('status')
+            .mockResolvedValueOnce('foo')
+            .mockResolvedValueOnce('exit');
+        (clack.confirm as ReturnType<typeof vi.fn>).mockResolvedValue(true);
+        (clack.isCancel as unknown as ReturnType<typeof vi.fn>).mockReturnValue(false);
+        (spawnSync as ReturnType<typeof vi.fn>).mockReturnValue({ status: 0 });
+
+        await run_dashboard();
+
+        expect(spawnSync).toHaveBeenCalledWith(
+            process.execPath,
+            expect.arrayContaining([
+                '--experimental-strip-types',
+                expect.stringContaining('status.ts'),
+                'foo',
+            ]),
+            { stdio: 'inherit', cwd: '/repo' }
+        );
+    });
+
+    it('spawns pr command', async () => {
+        (get_repo_root as ReturnType<typeof vi.fn>).mockReturnValue('/repo');
+        (worktree_list as ReturnType<typeof vi.fn>).mockReturnValue([
+            { path: '/repo--foo', head: 'abc', branch: 'agent/foo', bare: false },
+        ]);
+        (read_state as ReturnType<typeof vi.fn>).mockReturnValue({});
+        (clack.select as ReturnType<typeof vi.fn>)
+            .mockResolvedValueOnce('pr')
+            .mockResolvedValueOnce('foo')
+            .mockResolvedValueOnce('exit');
+        (clack.confirm as ReturnType<typeof vi.fn>).mockResolvedValue(true);
+        (clack.isCancel as unknown as ReturnType<typeof vi.fn>).mockReturnValue(false);
+        (spawnSync as ReturnType<typeof vi.fn>).mockReturnValue({ status: 0 });
+
+        await run_dashboard();
+
+        expect(spawnSync).toHaveBeenCalledWith(
+            process.execPath,
+            expect.arrayContaining([
+                '--experimental-strip-types',
+                expect.stringContaining('pr.ts'),
+                'foo',
+            ]),
+            { stdio: 'inherit', cwd: '/repo' }
+        );
+    });
+
+    it('spawns validate command', async () => {
+        (get_repo_root as ReturnType<typeof vi.fn>).mockReturnValue('/repo');
+        (worktree_list as ReturnType<typeof vi.fn>).mockReturnValue([]);
+        (read_state as ReturnType<typeof vi.fn>).mockReturnValue({});
+        (clack.select as ReturnType<typeof vi.fn>)
+            .mockResolvedValueOnce('validate')
+            .mockResolvedValueOnce('exit');
+        (clack.confirm as ReturnType<typeof vi.fn>).mockResolvedValue(true);
+        (clack.isCancel as unknown as ReturnType<typeof vi.fn>).mockReturnValue(false);
+        (spawnSync as ReturnType<typeof vi.fn>).mockReturnValue({ status: 0 });
+
+        await run_dashboard();
+
+        expect(spawnSync).toHaveBeenCalledWith(
+            process.execPath,
+            expect.arrayContaining([
+                '--experimental-strip-types',
+                expect.stringContaining('validate.ts'),
+            ]),
+            { stdio: 'inherit', cwd: '/repo' }
+        );
+    });
+
+    it('spawns test command', async () => {
+        (get_repo_root as ReturnType<typeof vi.fn>).mockReturnValue('/repo');
+        (worktree_list as ReturnType<typeof vi.fn>).mockReturnValue([]);
+        (read_state as ReturnType<typeof vi.fn>).mockReturnValue({});
+        (clack.select as ReturnType<typeof vi.fn>)
+            .mockResolvedValueOnce('test')
+            .mockResolvedValueOnce('exit');
+        (clack.confirm as ReturnType<typeof vi.fn>).mockResolvedValue(true);
+        (clack.isCancel as unknown as ReturnType<typeof vi.fn>).mockReturnValue(false);
+        (spawnSync as ReturnType<typeof vi.fn>).mockReturnValue({ status: 0 });
+
+        await run_dashboard();
+
+        expect(spawnSync).toHaveBeenCalledWith(
+            process.execPath,
+            expect.arrayContaining([
+                '--experimental-strip-types',
+                expect.stringContaining('test.ts'),
+            ]),
+            { stdio: 'inherit', cwd: '/repo' }
+        );
+    });
+
+    it('spawns doctor command', async () => {
+        (get_repo_root as ReturnType<typeof vi.fn>).mockReturnValue('/repo');
+        (worktree_list as ReturnType<typeof vi.fn>).mockReturnValue([]);
+        (read_state as ReturnType<typeof vi.fn>).mockReturnValue({});
+        (clack.select as ReturnType<typeof vi.fn>)
+            .mockResolvedValueOnce('doctor')
+            .mockResolvedValueOnce('exit');
+        (clack.confirm as ReturnType<typeof vi.fn>).mockResolvedValue(true);
+        (clack.isCancel as unknown as ReturnType<typeof vi.fn>).mockReturnValue(false);
+        (spawnSync as ReturnType<typeof vi.fn>).mockReturnValue({ status: 0 });
+
+        await run_dashboard();
+
+        expect(spawnSync).toHaveBeenCalledWith(
+            process.execPath,
+            expect.arrayContaining([
+                '--experimental-strip-types',
+                expect.stringContaining('doctor.ts'),
+            ]),
+            { stdio: 'inherit', cwd: '/repo' }
+        );
+    });
+
+    it('spawns help for unknown action', async () => {
+        (get_repo_root as ReturnType<typeof vi.fn>).mockReturnValue('/repo');
+        (worktree_list as ReturnType<typeof vi.fn>).mockReturnValue([]);
+        (read_state as ReturnType<typeof vi.fn>).mockReturnValue({});
+        (clack.select as ReturnType<typeof vi.fn>)
+            .mockResolvedValueOnce('help')
+            .mockResolvedValueOnce('exit');
+        (clack.confirm as ReturnType<typeof vi.fn>).mockResolvedValue(true);
+        (clack.isCancel as unknown as ReturnType<typeof vi.fn>).mockReturnValue(false);
+        (spawnSync as ReturnType<typeof vi.fn>).mockReturnValue({ status: 0 });
+
+        await run_dashboard();
+
+        expect(spawnSync).toHaveBeenCalledWith(
+            process.execPath,
+            expect.arrayContaining([
+                '--experimental-strip-types',
+                expect.stringContaining('help.ts'),
+            ]),
+            { stdio: 'inherit', cwd: '/repo' }
+        );
+    });
+
+    it('cancels open when no slug selected', async () => {
+        (get_repo_root as ReturnType<typeof vi.fn>).mockReturnValue('/repo');
+        (worktree_list as ReturnType<typeof vi.fn>).mockReturnValue([
+            { path: '/repo--foo', head: 'abc', branch: 'agent/foo', bare: false },
+        ]);
+        (read_state as ReturnType<typeof vi.fn>).mockReturnValue({});
+        (clack.select as ReturnType<typeof vi.fn>)
+            .mockResolvedValueOnce('open')
+            .mockResolvedValueOnce(undefined)
+            .mockResolvedValueOnce('exit');
+        (clack.isCancel as unknown as ReturnType<typeof vi.fn>).mockReturnValue(true);
+        (spawnSync as ReturnType<typeof vi.fn>).mockReturnValue({ status: 0 });
+
+        await run_dashboard();
+
+        expect(spawnSync).not.toHaveBeenCalledWith(
+            process.execPath,
+            expect.arrayContaining([expect.stringContaining('open.ts')]),
+            expect.anything()
+        );
+    });
+
+    it('cancels new when slug is cancelled', async () => {
+        (get_repo_root as ReturnType<typeof vi.fn>).mockReturnValue('/repo');
+        (worktree_list as ReturnType<typeof vi.fn>).mockReturnValue([]);
+        (read_state as ReturnType<typeof vi.fn>).mockReturnValue({});
+        (clack.select as ReturnType<typeof vi.fn>)
+            .mockResolvedValueOnce('new')
+            .mockResolvedValueOnce('exit');
+        (clack.text as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
+        (clack.isCancel as unknown as ReturnType<typeof vi.fn>).mockReturnValue(true);
+        (spawnSync as ReturnType<typeof vi.fn>).mockReturnValue({ status: 0 });
+
+        await run_dashboard();
+
+        expect(spawnSync).not.toHaveBeenCalledWith(
+            process.execPath,
+            expect.arrayContaining([expect.stringContaining('new.ts')]),
+            expect.anything()
+        );
+    });
 });

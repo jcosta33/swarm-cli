@@ -1,4 +1,4 @@
-import type { EventHandler, EventMap, WildcardHandler } from '../types';
+import type { EventHandler, EventMap, WildcardHandler } from '../types.ts';
 
 export function createSubscriptionRegistry<TEvents extends EventMap>() {
     const handlers = new Map<keyof TEvents & string, Set<EventHandler<never>>>();

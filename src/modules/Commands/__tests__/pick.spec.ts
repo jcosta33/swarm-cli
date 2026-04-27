@@ -26,6 +26,10 @@ describe('pick', () => {
     beforeEach(() => {
         vi.spyOn(console, 'log').mockImplementation(() => {});
         vi.spyOn(console, 'error').mockImplementation(() => {});
+        vi.spyOn(process, 'kill').mockImplementation(() => true);
+        vi.mocked(worktree_list).mockReturnValue([
+            { path: '/tmp/repo/.agents/agent-foo', branch: 'agent/foo', head: 'abc' },
+        ]);
     });
 
     afterEach(() => {
@@ -49,5 +53,25 @@ describe('pick', () => {
         vi.mocked(spawnSync).mockReturnValue({ status: 0, stdout: '', stderr: '' } as ReturnType<typeof spawnSync>);
         process.argv = ['node', 'script', 'open'];
         expect(run()).toBe(0);
+    });
+
+    it('returns 1 for unknown action', () => {
+        vi.mocked(fzf_select).mockReturnValue('foo');
+        process.argv = ['node', 'script', 'unknown'];
+        expect(run()).toBe(1);
+    });
+
+    it('handles array selection from fzf', () => {
+        vi.mocked(fzf_select).mockReturnValue(['foo']);
+        vi.mocked(spawnSync).mockReturnValue({ status: 0, stdout: '', stderr: '' } as ReturnType<typeof spawnSync>);
+        process.argv = ['node', 'script', 'open'];
+        expect(run()).toBe(0);
+    });
+
+    it('handles signal from spawned process', () => {
+        vi.mocked(fzf_select).mockReturnValue('foo');
+        vi.mocked(spawnSync).mockReturnValue({ signal: 'SIGTERM', status: null, stdout: '', stderr: '' } as ReturnType<typeof spawnSync>);
+        process.argv = ['node', 'script', 'open'];
+        expect(run()).toBe(1);
     });
 });

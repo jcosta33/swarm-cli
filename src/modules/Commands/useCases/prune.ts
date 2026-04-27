@@ -49,16 +49,19 @@ export function run(): number {
             console.log(
                 yellow(`Removing merged sandbox: ${slug}`)
             );
-            try {
-                worktree_remove(s.path, true, repoRoot);
-                delete_branch(s.branch ?? '', repoRoot, true);
-                remove_state(repoRoot, slug);
-                removedCount++;
-                console.log(green(`  ✓ Removed ${slug}`));
-            } catch (_e: unknown) {
-                const e = _e instanceof Error ? _e : new Error(String(_e));
-                console.error(red(`  ✗ Failed to remove ${slug}: ${e.message}`));
+            const removeResult = worktree_remove(s.path, true, repoRoot);
+            if (!removeResult.ok) {
+                console.error(red(`  ✗ Failed to remove ${slug}: ${removeResult.error.message}`));
+                continue;
             }
+            const deleteResult = delete_branch(s.branch ?? '', repoRoot, true);
+            if (!deleteResult.ok) {
+                console.error(red(`  ✗ Failed to remove ${slug}: ${deleteResult.error.message}`));
+                continue;
+            }
+            remove_state(repoRoot, slug);
+            removedCount++;
+            console.log(green(`  ✓ Removed ${slug}`));
         }
     }
 

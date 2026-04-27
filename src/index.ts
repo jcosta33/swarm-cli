@@ -17,6 +17,41 @@ import { print_help } from './modules/Commands/useCases/help.ts';
 import { run_dashboard } from './modules/Commands/useCases/dashboard.ts';
 import { get_adapter } from './modules/Adapters/index.ts';
 import { run_with_context } from './modules/Terminal/index.ts';
+import { persist_event, record_session } from './modules/AgentState/index.ts';
+import { swarmBus } from './infra/events/swarmBus.ts';
+
+// ── Event-bus bootstrap ─────────────────────────────────────────────────────
+// Telemetry persistence is wired through the bus so that emitters
+// (launch-agent, etc.) don't need to know about the SQLite layer. Listeners
+// are registered exactly once per process — this file is the entry point.
+swarmBus.on('agent.session.recorded', (event) => {
+    const id = `${event.slug}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+    record_session(event.repoRoot, {
+        id,
+        slug: event.slug,
+        agent: event.agent,
+        model: null,
+        started_at: event.startedAt,
+        finished_at: event.finishedAt,
+        exit_code: event.exitCode,
+    });
+});
+
+// Tail-able audit trail. Every event lands in .agents/logs/events.ndjson so
+// operators can `tail -f` the file or `swarm logs --events` to watch the
+// system in real time. Each event payload includes `repoRoot`, so the
+// listener routes to the correct file even across multi-repo invocations.
+swarmBus.onAny((eventName, payload) => {
+    if (
+        payload &&
+        typeof payload === 'object' &&
+        'repoRoot' in payload &&
+        typeof (payload as { repoRoot: unknown }).repoRoot === 'string'
+    ) {
+        const repoRoot = (payload as { repoRoot: string }).repoRoot;
+        persist_event(repoRoot, eventName, payload);
+    }
+});
 
 const AGENT_INSTALL_INFO: Record<string, { install: string; desc: string } | undefined> = {
     aider: { install: 'pip install aider-chat', desc: 'Interactive command-line pair-programming AI.' },
@@ -65,11 +100,11 @@ function print_agent_banner(agentName: string, args: string[]) {
     process.stdout.write(`\x1b]0;[Swarm] ${info.repoName} | ${info.branch}\x07`);
 
     console.clear();
-    console.log(c('╔' + '━'.repeat(78) + '╗'));
+    console.log(c(`╔${'━'.repeat(78)}╗`));
     console.log(
-        c('┃') + ' ' + color.bold(color.white(`🤖 SWARM EVOLUTION : ${(agentName).toUpperCase()}`)).padEnd(87) + c('┃')
+        `${c('┃')} ${color.bold(color.white(`🤖 SWARM EVOLUTION : ${agentName.toUpperCase()}`)).padEnd(87)}${c('┃')}`
     );
-    console.log(c('┣' + '━'.repeat(78) + '┫'));
+    console.log(c(`┣${'━'.repeat(78)}┫`));
 
     const labels = [
         { label: 'Repo', val: color.white(info.repoName) },
@@ -84,17 +119,22 @@ function print_agent_banner(agentName: string, args: string[]) {
 
     for (const row of labels) {
         const text = `  ${c('■')} ${color.dim(row.label.padEnd(10))} ${row.val}`;
-        console.log(c('┃') + text.padEnd(99) + c('┃'));
+        console.log(`${c('┃')}${text.padEnd(99)}${c('┃')}`);
     }
 
-    console.log(c('╚' + '━'.repeat(78) + '╝'));
+    console.log(c(`╚${'━'.repeat(78)}╝`));
     console.log('');
 }
 
 async function handle_unknown_command(cmd: string): Promise<number> {
     const adapter = get_adapter(cmd);
     const installInfo = AGENT_INSTALL_INFO[cmd];
-    const executable = adapter ? adapter.command : installInfo ? cmd : null;
+    let executable: string | null = null;
+    if (adapter) {
+        executable = adapter.command;
+    } else if (installInfo) {
+        executable = cmd;
+    }
 
     if (executable) {
         const isInstalled =
@@ -156,7 +196,7 @@ async function handle_unknown_command(cmd: string): Promise<number> {
 
     intro(color.bgCyan(color.black(' Swarm CLI ')));
     log.error(color.red(`Unknown command: ${cmd}`));
-    log.message('Use ' + color.cyan('swarm --help') + ' to see available commands.');
+    log.message(`Use ${color.cyan('swarm --help')} to see available commands.`);
     log.info(
         color.dim(`If '${cmd}' is a project-specific script, add it to your swarm.config.json under "commands".`)
     );
@@ -203,7 +243,7 @@ async function main(): Promise<number> {
             }
             const realCandidate = realpathSync(candidatePath);
             const realRoot = realpathSync(useCasesDir);
-            if (!realCandidate.startsWith(realRoot + '/') && realCandidate !== realRoot) {
+            if (!realCandidate.startsWith(`${realRoot}/`) && realCandidate !== realRoot) {
                 console.error(color.red(`Command resolved outside useCases dir: ${cmd}`));
                 return 1;
             }

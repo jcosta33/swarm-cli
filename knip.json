@@ -1,9 +1,19 @@
 {
     "$schema": "https://unpkg.com/knip@latest/schema.json",
-    "entry": ["src/routes/**/*.tsx", "scripts/*.ts", "codemods/*.ts"],
-    "project": ["src/**/*.{ts,tsx}", "!src/**/*.spec.{ts,tsx}", "!src/**/*.test.{ts,tsx}", "!src/routeTree.gen.ts"],
-    "ignore": [],
+    "vitest": {
+        "config": "vitest.config.ts",
+        "entry": ["src/**/__tests__/*.spec.ts"]
+    },
+    "entry": [
+        "bin/swarm.js",
+        "src/index.ts",
+        "src/modules/Commands/useCases/*.ts"
+    ],
+    "project": [
+        "src/**/*.ts",
+        "!src/**/*.spec.ts",
+        "!src/**/*.test.ts"
+    ],
     "ignoreExportsUsedInFile": true,
-    "ignoreDependencies": ["tailwindcss"],
-    "ignoreBinaries": ["prettier", "wasm-pack"]
+    "ignoreBinaries": ["prettier", "playwright", "gh"]
 }

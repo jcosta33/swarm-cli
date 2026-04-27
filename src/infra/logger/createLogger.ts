@@ -1,4 +1,4 @@
-import { type Logger, type LogWriter } from './types';
+import { type Logger, type LogWriter } from './types.ts';
 
 export const createLogger = (initialWriters?: LogWriter[]): Logger => {
     let writers: LogWriter[] = initialWriters ?? [];

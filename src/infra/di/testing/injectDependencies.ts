@@ -1,7 +1,7 @@
-import { Container } from '../Container';
-import { testOverrides } from '../internal/containerState';
+import { Container } from '../Container.ts';
+import { testOverrides } from '../internal/containerState.ts';
 
-import type { InjectableFunction } from '../inject';
+import type { InjectableFunction } from '../inject.ts';
 
 export const injectDependencies = <TInjectable extends InjectableFunction, TMocks extends Record<string, unknown>>(
     injectable: TInjectable,
@@ -16,9 +16,16 @@ export const injectDependencies = <TInjectable extends InjectableFunction, TMock
     }
 
     for (const [key, mockValue] of Object.entries(mocks)) {
-        const originalDep = injectable._options?.lazy
-            ? (Object.getOwnPropertyDescriptor(injectable._deps, key)?.get ?? injectable._deps[key])
-            : injectable._deps[key];
+        let originalDep: unknown;
+        if (injectable._options?.lazy) {
+            const descriptor = Object.getOwnPropertyDescriptor(injectable._deps, key);
+            // The getter function is used as a token (identity only); it is
+            // not invoked here, so the unbound-`this` warning does not apply.
+            // eslint-disable-next-line @typescript-eslint/unbound-method -- token identity, not invocation
+            originalDep = descriptor?.get ?? injectable._deps[key];
+        } else {
+            originalDep = injectable._deps[key];
+        }
         testOverrides.set(originalDep, mockValue);
     }
 

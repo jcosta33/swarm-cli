@@ -2,12 +2,25 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs';
 import { dirname, join } from 'path';
 import { lockSync, unlockSync } from 'proper-lockfile';
 
+import { createAppError, type AppError } from '../../../infra/errors/createAppError.ts';
+import { err, ok, type Result } from '../../../infra/errors/result.ts';
+
 type FileLock = {
     agent_slug: string;
     files: string[];
     claimed_at: string;
     expires_at: string;
 };
+
+export type LockHeldByOtherError = AppError<
+    'LockHeldByOther',
+    { file: string; heldBy: string; expiresAt: string }
+>;
+
+export type LockNotFoundError = AppError<'LockNotFound', { file: string }>;
+
+export type ClaimLockResult = Result<true, LockHeldByOtherError>;
+export type ReleaseLockResult = Result<true, LockNotFoundError>;
 
 const DEFAULT_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
 const LOCK_OPTS = { stale: 5000 };
@@ -80,17 +93,20 @@ function is_expired(lock: FileLock): boolean {
     return new Date(lock.expires_at).getTime() < Date.now();
 }
 
-export function claim_lock(repoRoot: string, agentSlug: string, files: string[]): { success: boolean; reason?: string } {
-    return with_locks_mutex(repoRoot, () => {
+export function claim_lock(repoRoot: string, agentSlug: string, files: string[]): ClaimLockResult {
+    return with_locks_mutex(repoRoot, (): ClaimLockResult => {
         const locks = read_locks(repoRoot);
 
         for (const file of files) {
             const existing = locks[file];
             if (existing !== undefined && !is_expired(existing) && existing.agent_slug !== agentSlug) {
-                return {
-                    success: false,
-                    reason: `File "${file}" is already claimed by ${existing.agent_slug} (expires: ${existing.expires_at}).`,
-                };
+                return err(
+                    createAppError(
+                        'LockHeldByOther',
+                        `File "${file}" is already claimed by ${existing.agent_slug} (expires: ${existing.expires_at}).`,
+                        { file, heldBy: existing.agent_slug, expiresAt: existing.expires_at }
+                    )
+                );
             }
         }
 
@@ -107,22 +123,22 @@ export function claim_lock(repoRoot: string, agentSlug: string, files: string[])
         }
 
         write_locks(repoRoot, locks);
-        return { success: true };
+        return ok(true);
     });
 }
 
-export function release_lock(repoRoot: string, file: string): { success: boolean; reason?: string } {
-    return with_locks_mutex(repoRoot, () => {
+export function release_lock(repoRoot: string, file: string): ReleaseLockResult {
+    return with_locks_mutex(repoRoot, (): ReleaseLockResult => {
         const locks = read_locks(repoRoot);
         const existing = locks[file];
         if (existing === undefined) {
-            return { success: false, reason: `File "${file}" is not locked.` };
+            return err(createAppError('LockNotFound', `File "${file}" is not locked.`, { file }));
         }
 
         const { [file]: _removed, ...rest } = locks;
         void _removed;
         write_locks(repoRoot, rest);
-        return { success: true };
+        return ok(true);
     });
 }
 

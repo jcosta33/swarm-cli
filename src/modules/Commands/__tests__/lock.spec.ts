@@ -6,12 +6,12 @@ vi.mock('../../Workspace/index.ts', () => ({
 }));
 
 vi.mock('../../AgentState/index.ts', () => ({
-    claim_lock: vi.fn(() => ({ success: true })),
-    release_lock: vi.fn(() => ({ success: true })),
+    claim_lock: vi.fn(() => ({ ok: true, value: true })),
+    release_lock: vi.fn(() => ({ ok: true, value: true })),
     list_locks: vi.fn(() => []),
 }));
 
-import { claim_lock, release_lock, list_locks } from '../../AgentState/index.ts';
+import { list_locks } from '../../AgentState/index.ts';
 
 describe('lock', () => {
     beforeEach(() => {

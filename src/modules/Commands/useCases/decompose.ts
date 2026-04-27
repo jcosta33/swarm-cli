@@ -7,9 +7,8 @@ import { parse_args, red, green, dim, cyan, bold } from '../../Terminal/index.ts
 import { load_config } from '../../Terminal/index.ts';
 import { get_repo_root, get_repo_name, worktree_create, branch_exists } from '../../Workspace/index.ts';
 import { write_state } from '../../AgentState/index.ts';
-import { create_or_update_task_file, derive_names } from '../../TaskManagement/index.ts';
+import { create_or_update_task_file, derive_names, validate_dag, topological_sort } from '../../TaskManagement/index.ts';
 import { get_adapter } from '../../Adapters/index.ts';
-import { validate_dag, topological_sort } from '../../TaskManagement/useCases/dag.ts';
 
 type TaskNode = {
     id: string;
@@ -38,7 +37,7 @@ export function load_task_graph(path: string): TaskNode[] {
         raw = JSON.parse(text);
     } catch (e: unknown) {
         const message = e instanceof Error ? e.message : String(e);
-        throw new Error(`Invalid JSON in task graph: ${message}`);
+        throw new Error(`Invalid JSON in task graph: ${message}`, { cause: e });
     }
 
     if (!raw || typeof raw !== 'object' || Array.isArray(raw)) {
@@ -124,11 +123,9 @@ async function execute_dag(
         const worktreePath = resolve(repoRoot, rawWorktreePath);
 
         if (!branch_exists(branch, repoRoot)) {
-            try {
-                worktree_create(worktreePath, branch, config.defaultBaseBranch ?? 'main', repoRoot);
-            } catch (_e: unknown) {
-                const e = _e instanceof Error ? _e : new Error(String(_e));
-                console.error(red(`Failed to create worktree for ${slug}: ${e.message}`));
+            const createResult = worktree_create(worktreePath, branch, config.defaultBaseBranch ?? 'main', repoRoot);
+            if (!createResult.ok) {
+                console.error(red(`Failed to create worktree for ${slug}: ${createResult.error.message}`));
                 statusMap.set(task.id, 'failed');
                 continue;
             }
@@ -231,7 +228,7 @@ async function execute_dag(
     }
 }
 
-function run(): number {
+export function run(): number {
     let repoRoot: string;
     try {
         repoRoot = get_repo_root();

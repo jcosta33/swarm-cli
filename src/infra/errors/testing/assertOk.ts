@@ -1,4 +1,4 @@
-import { type Result, isOk } from '../result';
+import { type Result, isOk } from '../result.ts';
 
 export const assertOk = <TValue, TError>(result: Result<TValue, TError>): TValue => {
     if (!isOk(result)) {

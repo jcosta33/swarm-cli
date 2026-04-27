@@ -3,6 +3,7 @@ import { run, find_impacted_specs } from '../useCases/test-radius.ts';
 
 vi.mock('../../Workspace/index.ts', () => ({
     get_repo_root: vi.fn(() => '/tmp/repo'),
+    resolve_within: vi.fn((root: string, path: string) => ({ ok: true, value: `${root}/${path}` })),
 }));
 
 describe('test-radius', () => {
@@ -20,6 +21,11 @@ describe('test-radius', () => {
             const specs = find_impacted_specs('/Users/josecosta/dev/swarm-cli', 'src/modules/Commands/useCases/find.ts');
             expect(Array.isArray(specs)).toBe(true);
         });
+
+        it('returns empty array for non-existent directory', () => {
+            const specs = find_impacted_specs('/non-existent-path-12345', 'src/index.ts');
+            expect(specs).toEqual([]);
+        });
     });
 
     it('returns 1 when file is missing', () => {
@@ -31,4 +37,10 @@ describe('test-radius', () => {
         process.argv = ['node', 'script', 'src/modules/Commands/useCases/find.ts'];
         expect(run()).toBe(0);
     });
+
+    it('returns 0 when no impacted specs found', () => {
+        process.argv = ['node', 'script', 'src/modules/Commands/useCases/non-existent.ts'];
+        expect(run()).toBe(0);
+    });
+
 });

@@ -3,7 +3,7 @@
 import { writeFileSync, existsSync, mkdirSync, readFileSync } from 'fs';
 import { join, basename } from 'path';
 import { red, cyan, bold, dim, green, parse_args } from '../../Terminal/index.ts';
-import { get_repo_root } from '../../Workspace/index.ts';
+import { get_repo_root, resolve_within } from '../../Workspace/index.ts';
 
 export function generateFuzzTemplate(funcName: string, fileName: string): string {
     return `import { describe, it, expect } from 'vitest';
@@ -37,7 +37,7 @@ describe('${funcName} Fuzzer', () => {
 `;
 }
 
-function run(): number {
+export function run(): number {
     let repoRoot;
     try {
         repoRoot = get_repo_root();
@@ -55,7 +55,12 @@ function run(): number {
         return 1;
     }
 
-    const fullPath = join(repoRoot, targetFile);
+    const resolved = resolve_within(repoRoot, targetFile);
+    if (!resolved.ok) {
+        console.error(red(resolved.error.message));
+        return 1;
+    }
+    const fullPath = resolved.value;
     if (!existsSync(fullPath)) {
         console.error(red(`File not found: ${targetFile}`));
         return 1;
@@ -77,7 +82,7 @@ function run(): number {
 
     writeFileSync(specFile, template, 'utf8');
 
-    console.log(green(`✓ Fuzzer suite created: ${specFile.replace(repoRoot + '/', '')}`));
+    console.log(green(`✓ Fuzzer suite created: ${specFile.replace(`${repoRoot}/`, '')}`));
     console.log(dim(`Run 'pnpm vitest ${basename(specFile)}' to execute the chaos suite.`));
     console.log('');
     return 0;

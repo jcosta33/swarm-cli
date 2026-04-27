@@ -2,6 +2,7 @@
 
 import { get_adapter } from '../../Adapters/index.ts';
 import { write_state } from '../../AgentState/index.ts';
+import { swarmBus } from '../../../infra/events/swarmBus.ts';
 import {
     check_backend,
     command_exists,
@@ -12,13 +13,13 @@ import {
     resolve_backend,
 } from '../../Terminal/index.ts';
 
-interface LaunchAgentInput {
+type LaunchAgentInput = {
     repoRoot: string;
     slug: string;
     worktreePath: string;
     title?: string;
     agent?: string;
-}
+};
 
 /**
  * Resolve agent configuration and launch the agent in the configured backend.
@@ -71,7 +72,34 @@ export function launch_agent(input: LaunchAgentInput): number {
         agent: agentName,
     });
 
+    const startedAt = new Date().toISOString();
+
+    // Fire `agent.launched` before `launch()` blocks. Sync listeners run
+    // inline so the audit row is on disk before control passes to the
+    // agent process — useful for diagnostics if `launch()` never returns.
+    void swarmBus.emit('agent.launched', {
+        repoRoot,
+        slug,
+        agent: agentName,
+        backend,
+        startedAt,
+    });
+
     const exitCode = launch(backend, worktreePath, agentCfg.command, args, bannerInfo, repoRoot);
+    const finishedAt = new Date().toISOString();
+    const numericExitCode = typeof exitCode === 'number' ? exitCode : null;
+
+    // Sync handlers (the telemetry recorder) run inline before emit() resolves,
+    // so this fire-and-forget call still persists the row before we return.
+    void swarmBus.emit('agent.session.recorded', {
+        repoRoot,
+        slug,
+        agent: agentName,
+        startedAt,
+        finishedAt,
+        exitCode: numericExitCode,
+    });
+
     if (typeof exitCode === 'number') {
         return exitCode;
     }

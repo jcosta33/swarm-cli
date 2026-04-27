@@ -22,9 +22,7 @@ describe('heal', () => {
     });
 
     it('returns 0 when typecheck passes', () => {
-        let callCount = 0;
         vi.mocked(spawnSync).mockImplementation(() => {
-            callCount++;
             return { status: 0, stdout: '', stderr: '' } as ReturnType<typeof spawnSync>;
         });
         process.argv = ['node', 'script'];

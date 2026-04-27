@@ -7,7 +7,7 @@ vi.mock('child_process', async (importOriginal) => {
     return { ...(actual as object), spawnSync: vi.fn() };
 });
 
-import { existsSync, mkdirSync, writeFileSync } from 'fs';
+import { writeFileSync } from 'fs';
 
 vi.mock('../../Workspace/index.ts', () => ({
     get_repo_root: vi.fn(() => '/tmp/repo'),

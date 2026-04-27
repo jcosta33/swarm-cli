@@ -1,4 +1,4 @@
-import type { DependencyKey } from '../types';
+import type { DependencyKey } from '../types.ts';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any -- DI registry maps are heterogeneous by design
 export const registrations = new Map<DependencyKey<any>, any>();

@@ -60,7 +60,7 @@ export function render_dashboard(repoRoot: string) {
     console.log(`  ${dim('Press Ctrl+C to exit.')}`);
 }
 
-function run() {
+export function run() {
     let repoRoot: string;
     try {
         repoRoot = get_repo_root();

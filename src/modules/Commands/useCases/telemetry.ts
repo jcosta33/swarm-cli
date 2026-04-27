@@ -5,17 +5,17 @@ import { join } from 'path';
 import { red, cyan, bold, dim, green, yellow } from '../../Terminal/index.ts';
 import { get_repo_root } from '../../Workspace/index.ts';
 
-interface AgentInfo { status?: string; backend?: string; agent?: string; }
+type AgentInfo = { status?: string; backend?: string; agent?: string };
 
 function isAgentInfo(value: unknown): value is AgentInfo {
     return typeof value === 'object' && value !== null;
 }
 
-export interface Metrics {
+export type Metrics = {
     activeCount: number;
     completedCount: number;
     crashedCount: number;
-}
+};
 
 export function aggregateMetrics(state: Record<string, unknown>): Metrics {
     let activeCount = 0;
@@ -34,7 +34,7 @@ export function aggregateMetrics(state: Record<string, unknown>): Metrics {
     return { activeCount, completedCount, crashedCount };
 }
 
-function run(): number {
+export function run(): number {
     let repoRoot;
     try {
         repoRoot = get_repo_root();
@@ -72,8 +72,14 @@ function run(): number {
     slugs.slice(-5).forEach(slug => {
         const info = state[slug];
         if (!isAgentInfo(info)) return;
-        const statusStr = info.status === 'running' ? green('[RUNNING]') :
-                          info.status === 'crashed' ? red('[CRASHED]') : dim(`[${(info.status ?? 'unknown').toUpperCase()}]`);
+        let statusStr: string;
+        if (info.status === 'running') {
+            statusStr = green('[RUNNING]');
+        } else if (info.status === 'crashed') {
+            statusStr = red('[CRASHED]');
+        } else {
+            statusStr = dim(`[${(info.status ?? 'unknown').toUpperCase()}]`);
+        }
 
         console.log(`  ${statusStr} ${cyan(slug)}`);
         console.log(dim(`    Backend: ${info.backend ?? 'unknown'}, Agent Type: ${info.agent ?? 'default'}`));

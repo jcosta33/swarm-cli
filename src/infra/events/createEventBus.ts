@@ -1,13 +1,13 @@
-import { logger } from '#/infra/logger/appLogger';
+import { logger } from '../logger/appLogger.ts';
 
-import { createSubscriptionRegistry } from './internal/createSubscriptionRegistry';
+import { createSubscriptionRegistry } from './internal/createSubscriptionRegistry.ts';
 
-import type { EventBus, EventMap } from './types';
+import type { EventBus, EventMap } from './types.ts';
 
 export function createEventBus<TEvents extends EventMap>(): EventBus<TEvents> {
     const registry = createSubscriptionRegistry<TEvents>();
     let pendingCount = 0;
-    let idleWaiters: Array<() => void> = [];
+    let idleWaiters: (() => void)[] = [];
 
     function waitForIdle(): Promise<void> {
         if (pendingCount === 0) {
@@ -38,7 +38,7 @@ export function createEventBus<TEvents extends EventMap>(): EventBus<TEvents> {
                         promises.push(result);
                     }
                 } catch (handlerError) {
-                    logger.warn(`Error in event handler for ${event}:`, handlerError);
+                    logger.warn(`Error in event handler for ${String(event)}:`, handlerError);
                 }
             }
 
@@ -49,7 +49,7 @@ export function createEventBus<TEvents extends EventMap>(): EventBus<TEvents> {
                         promises.push(result);
                     }
                 } catch (handlerError) {
-                    logger.warn(`Error in wildcard event handler for ${event}:`, handlerError);
+                    logger.warn(`Error in wildcard event handler for ${String(event)}:`, handlerError);
                 }
             }
 

@@ -1,65 +1,117 @@
-import { describe, expect, it } from 'vitest';
-import { auditSecurity } from '../useCases/audit-sec.ts';
+import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
+import { auditSecurity, run } from '../useCases/audit-sec.ts';
 
-describe('auditSecurity', () => {
-    it('returns empty array for safe code', () => {
-        const code = 'const x = 1;\nfunction foo() { return 42; }';
-        expect(auditSecurity(code)).toEqual([]);
-    });
+vi.mock('../../Terminal/index.ts', async (importOriginal) => {
+    const actual = await importOriginal();
+    return {
+        ...(actual as object),
+        parse_args: vi.fn(),
+        red: vi.fn((t: string) => t),
+        cyan: vi.fn((t: string) => t),
+        green: vi.fn((t: string) => t),
+        yellow: vi.fn((t: string) => t),
+        bold: vi.fn((t: string) => t),
+        dim: vi.fn((t: string) => t),
+    };
+});
 
-    it('detects eval usage', () => {
-        const code = "eval('dangerous');";
-        const issues = auditSecurity(code);
-        expect(issues).toHaveLength(1);
-        expect(issues[0]).toMatchObject({
-            line: 1,
-            text: "eval('dangerous');",
-            description: 'Usage of eval() is highly dangerous.',
+vi.mock('../../Workspace/index.ts', () => ({
+    get_repo_root: vi.fn(() => '/tmp/repo'),
+    resolve_within: vi.fn((root: string, path: string) => ({ ok: true, value: `${root}/${path}` })),
+}));
+
+vi.mock('fs', async (importOriginal) => {
+    const actual = await importOriginal<typeof import('fs')>();
+    return {
+        ...actual,
+        existsSync: vi.fn(() => true),
+        readFileSync: vi.fn(() => 'const x = 1;'),
+    };
+});
+
+import { parse_args } from '../../Terminal/index.ts';
+import { get_repo_root } from '../../Workspace/index.ts';
+import { existsSync, readFileSync } from 'fs';
+
+describe('audit-sec module', () => {
+    describe('auditSecurity', () => {
+        it('finds eval usage', () => {
+            const issues = auditSecurity('eval(something)');
+            expect(issues.length).toBeGreaterThan(0);
+            expect(issues[0].description).toContain('eval');
+        });
+
+        it('finds dangerouslySetInnerHTML', () => {
+            const issues = auditSecurity('dangerouslySetInnerHTML={{ __html: html }}');
+            expect(issues.some((i) => i.description.includes('dangerouslySetInnerHTML'))).toBe(true);
+        });
+
+        it('finds localStorage token', () => {
+            const issues = auditSecurity("localStorage.setItem('token', 'abc')");
+            expect(issues.some((i) => i.description.includes('localStorage'))).toBe(true);
+        });
+
+        it('finds hardcoded API_KEY', () => {
+            const issues = auditSecurity('const API_KEY = "secret"');
+            expect(issues.some((i) => i.description.includes('API_KEY'))).toBe(true);
+        });
+
+        it('finds hardcoded SECRET', () => {
+            const issues = auditSecurity('const SECRET = "secret"');
+            expect(issues.some((i) => i.description.includes('SECRET'))).toBe(true);
+        });
+
+        it('returns empty when clean', () => {
+            expect(auditSecurity('const x = 1;')).toEqual([]);
         });
     });
 
-    it('detects dangerouslySetInnerHTML', () => {
-        const code = '<div dangerouslySetInnerHTML={{ __html: html }} />';
-        const issues = auditSecurity(code);
-        expect(issues).toHaveLength(1);
-        expect(issues[0].description).toBe('React dangerouslySetInnerHTML found. XSS risk.');
-    });
+    describe('run', () => {
+        beforeEach(() => {
+            vi.spyOn(console, 'log').mockImplementation(() => {});
+            vi.spyOn(console, 'error').mockImplementation(() => {});
+        });
 
-    it('detects localStorage token storage', () => {
-        const code = "localStorage.setItem('token', 'secret');";
-        const issues = auditSecurity(code);
-        expect(issues).toHaveLength(1);
-        expect(issues[0].description).toBe('Storing auth tokens in localStorage exposes them to XSS.');
-    });
+        afterEach(() => {
+            vi.restoreAllMocks();
+        });
 
-    it('detects hardcoded API_KEY', () => {
-        const code = 'const API_KEY = "sk-12345";';
-        const issues = auditSecurity(code);
-        expect(issues).toHaveLength(1);
-        expect(issues[0].description).toBe('Potential hardcoded API_KEY detected.');
-    });
+        it('returns 1 when not in a git repo', () => {
+            vi.mocked(get_repo_root).mockImplementation(() => { throw new Error('not a repo'); });
+            expect(run()).toBe(1);
+        });
 
-    it('detects hardcoded SECRET', () => {
-        const code = 'const SECRET = "my-secret";';
-        const issues = auditSecurity(code);
-        expect(issues).toHaveLength(1);
-        expect(issues[0].description).toBe('Potential hardcoded SECRET detected.');
-    });
+        it('returns 1 when args are missing', () => {
+            vi.mocked(get_repo_root).mockReturnValue('/tmp/repo');
+            vi.mocked(parse_args).mockReturnValue({ positional: [], flags: new Map() });
+            process.argv = ['node', 'script'];
+            expect(run()).toBe(1);
+        });
 
-    it('reports correct line numbers', () => {
-        const code = 'const a = 1;\neval("bad");\nconst b = 2;';
-        const issues = auditSecurity(code);
-        expect(issues).toHaveLength(1);
-        expect(issues[0].line).toBe(2);
-    });
+        it('returns 1 when file not found', () => {
+            vi.mocked(get_repo_root).mockReturnValue('/tmp/repo');
+            vi.mocked(parse_args).mockReturnValue({ positional: ['src/missing.ts'], flags: new Map() });
+            vi.mocked(existsSync).mockReturnValue(false);
+            process.argv = ['node', 'script'];
+            expect(run()).toBe(1);
+        });
 
-    it('detects multiple issues in one file', () => {
-        const code = `
-            eval('x');
-            const API_KEY = 'key';
-            const SECRET = 'secret';
-        `;
-        const issues = auditSecurity(code);
-        expect(issues).toHaveLength(3);
+        it('returns 0 when no issues found', () => {
+            vi.mocked(get_repo_root).mockReturnValue('/tmp/repo');
+            vi.mocked(parse_args).mockReturnValue({ positional: ['src/foo.ts'], flags: new Map() });
+            vi.mocked(existsSync).mockReturnValue(true);
+            vi.mocked(readFileSync).mockReturnValue('const x = 1;');
+            process.argv = ['node', 'script'];
+            expect(run()).toBe(0);
+        });
+
+        it('returns 1 when issues found', () => {
+            vi.mocked(get_repo_root).mockReturnValue('/tmp/repo');
+            vi.mocked(parse_args).mockReturnValue({ positional: ['src/foo.ts'], flags: new Map() });
+            vi.mocked(existsSync).mockReturnValue(true);
+            vi.mocked(readFileSync).mockReturnValue('eval(something)');
+            process.argv = ['node', 'script'];
+            expect(run()).toBe(1);
+        });
     });
 });

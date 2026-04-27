@@ -3,12 +3,12 @@ import { existsSync, readFileSync } from 'fs';
 import { join } from 'path';
 import { logger } from '../services/logger.ts';
 
-interface AgentConfig {
+type AgentConfig = {
     command: string;
     args: string[];
 };
 
-interface SwarmConfig {
+type SwarmConfig = {
     defaultBaseBranch?: string;
     worktreeDirPattern?: string;
     defaultTerminal?: string;

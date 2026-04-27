@@ -4,12 +4,36 @@ import { spawnSync } from 'child_process';
 import { existsSync } from 'fs';
 import { basename } from 'path';
 
-interface WorktreeInfo {
+import { createAppError, type AppError } from '../../../infra/errors/createAppError.ts';
+import { err, ok, type Result } from '../../../infra/errors/result.ts';
+
+type WorktreeInfo = {
     path: string;
     head: string | null;
     branch: string | null;
     bare: boolean;
-}
+};
+
+export type WorktreeCreateError = AppError<
+    'WorktreeCreateFailed',
+    { worktreePath: string; branch: string; baseBranch: string; stderr: string }
+>;
+
+export type WorktreeCreateResult = Result<{ path: string; branch: string }, WorktreeCreateError>;
+
+export type WorktreeRemoveError = AppError<
+    'WorktreeRemoveFailed',
+    { worktreePath: string; force: boolean; stderr: string }
+>;
+
+export type WorktreeRemoveResult = Result<{ path: string }, WorktreeRemoveError>;
+
+export type DeleteBranchError = AppError<
+    'DeleteBranchFailed',
+    { branch: string; force: boolean; stderr: string }
+>;
+
+export type DeleteBranchResult = Result<{ branch: string }, DeleteBranchError>;
 
 /**
  * Run a git command and return stdout as string.
@@ -96,25 +120,80 @@ export function find_worktree_for_branch(branch: string, repoRoot: string): stri
 }
 
 /**
- * Create a new worktree. If branch doesn't exist, creates it from baseBranch.
+ * Create a new worktree. If `branch` already exists, attaches it; otherwise
+ * creates it from `baseBranch`. Returns a `Result` so callers can react to
+ * failure (path already a worktree, branch checked out elsewhere, missing
+ * base branch) without try/catch.
  */
-export function worktree_create(worktreePath: string, branch: string, baseBranch: string, repoRoot: string) {
-    const exists = branch_exists(branch, repoRoot);
-    if (exists) {
-        git(['worktree', 'add', worktreePath, branch], { cwd: repoRoot });
-    } else {
-        git(['worktree', 'add', '-b', branch, worktreePath, baseBranch], { cwd: repoRoot });
+export function worktree_create(
+    worktreePath: string,
+    branch: string,
+    baseBranch: string,
+    repoRoot: string
+): WorktreeCreateResult {
+    const args = branch_exists(branch, repoRoot)
+        ? ['worktree', 'add', worktreePath, branch]
+        : ['worktree', 'add', '-b', branch, worktreePath, baseBranch];
+
+    const result = spawnSync('git', args, { cwd: repoRoot, encoding: 'utf8' });
+
+    if (result.error) {
+        return err(
+            createAppError(
+                'WorktreeCreateFailed',
+                `git worktree add failed: ${result.error.message}`,
+                { worktreePath, branch, baseBranch, stderr: result.error.message },
+                result.error
+            )
+        );
     }
+    if (result.status !== 0) {
+        const stderr = (result.stderr || '').trim() || `git worktree add exited with status ${String(result.status)}`;
+        return err(
+            createAppError(
+                'WorktreeCreateFailed',
+                `Failed to create worktree at "${worktreePath}" for branch "${branch}": ${stderr}`,
+                { worktreePath, branch, baseBranch, stderr }
+            )
+        );
+    }
+    return ok({ path: worktreePath, branch });
 }
 
 /**
- * Remove a worktree. Uses --force if requested.
+ * Remove a worktree. Uses `--force` if requested. Returns a `Result` so
+ * callers can distinguish "git refused" from "spawn failed" without try/catch.
  */
-export function worktree_remove(worktreePath: string, force: boolean, repoRoot: string) {
+export function worktree_remove(worktreePath: string, force: boolean, repoRoot: string): WorktreeRemoveResult {
     const args = ['worktree', 'remove'];
-    if (force) args.push('--force');
+    if (force) {
+        args.push('--force');
+    }
     args.push(worktreePath);
-    git(args, { cwd: repoRoot });
+
+    const result = spawnSync('git', args, { cwd: repoRoot, encoding: 'utf8' });
+
+    if (result.error) {
+        return err(
+            createAppError(
+                'WorktreeRemoveFailed',
+                `git worktree remove failed: ${result.error.message}`,
+                { worktreePath, force, stderr: result.error.message },
+                result.error
+            )
+        );
+    }
+    if (result.status !== 0) {
+        const stderr = (result.stderr || '').trim() || `git worktree remove exited with status ${String(result.status)}`;
+        return err(
+            createAppError(
+                'WorktreeRemoveFailed',
+                `Failed to remove worktree at "${worktreePath}": ${stderr}`,
+                { worktreePath, force, stderr }
+            )
+        );
+    }
+    return ok({ path: worktreePath });
 }
 
 /**
@@ -175,10 +254,36 @@ export function is_branch_merged_into(branch: string, baseBranch: string, repoRo
 }
 
 /**
- * Delete a local branch.
+ * Delete a local branch. Returns a `Result` — callers that want to "best
+ * effort delete and warn on failure" no longer need try/catch.
  */
-export function delete_branch(branch: string, repoRoot: string, force = false) {
-    git(['branch', force ? '-D' : '-d', branch], { cwd: repoRoot });
+export function delete_branch(branch: string, repoRoot: string, force = false): DeleteBranchResult {
+    const result = spawnSync('git', ['branch', force ? '-D' : '-d', branch], {
+        cwd: repoRoot,
+        encoding: 'utf8',
+    });
+
+    if (result.error) {
+        return err(
+            createAppError(
+                'DeleteBranchFailed',
+                `git branch delete failed: ${result.error.message}`,
+                { branch, force, stderr: result.error.message },
+                result.error
+            )
+        );
+    }
+    if (result.status !== 0) {
+        const stderr = (result.stderr || '').trim() || `git branch delete exited with status ${String(result.status)}`;
+        return err(
+            createAppError(
+                'DeleteBranchFailed',
+                `Failed to delete branch "${branch}": ${stderr}`,
+                { branch, force, stderr }
+            )
+        );
+    }
+    return ok({ branch });
 }
 
 /**

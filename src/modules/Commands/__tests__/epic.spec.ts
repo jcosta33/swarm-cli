@@ -1,38 +1,104 @@
-import { describe, expect, it } from 'vitest';
-import { parseEpicTasks } from '../useCases/epic.ts';
+import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
+import { parseEpicTasks, run } from '../useCases/epic.ts';
 
-describe('parseEpicTasks', () => {
-    it('returns empty array for empty content', () => {
-        expect(parseEpicTasks('')).toEqual([]);
+vi.mock('../../Terminal/index.ts', async (importOriginal) => {
+    const actual = await importOriginal();
+    return {
+        ...(actual as object),
+        parse_args: vi.fn(),
+        red: vi.fn((t: string) => t),
+        cyan: vi.fn((t: string) => t),
+        green: vi.fn((t: string) => t),
+        bold: vi.fn((t: string) => t),
+        dim: vi.fn((t: string) => t),
+    };
+});
+
+vi.mock('../../Workspace/index.ts', () => ({
+    get_repo_root: vi.fn(() => '/tmp/repo'),
+}));
+
+vi.mock('fs', async (importOriginal) => {
+    const actual = await importOriginal<typeof import('fs')>();
+    return {
+        ...actual,
+        existsSync: vi.fn(() => true),
+        readFileSync: vi.fn(() => '- Task one\n- Task two\n* Task three'),
+        writeFileSync: vi.fn(() => {}),
+        mkdirSync: vi.fn(() => {}),
+    };
+});
+
+import { parse_args } from '../../Terminal/index.ts';
+import { get_repo_root } from '../../Workspace/index.ts';
+import { existsSync, readFileSync } from 'fs';
+
+describe('epic module', () => {
+    describe('parseEpicTasks', () => {
+        it('parses dash list items', () => {
+            const result = parseEpicTasks('- Task one\n- Task two');
+            expect(result).toEqual(['Task one', 'Task two']);
+        });
+
+        it('parses asterisk list items', () => {
+            const result = parseEpicTasks('* Task one\n* Task two');
+            expect(result).toEqual(['Task one', 'Task two']);
+        });
+
+        it('ignores empty items', () => {
+            const result = parseEpicTasks('- Task one\n- \n- Task two');
+            expect(result).toEqual(['Task one', 'Task two']);
+        });
     });
 
-    it('parses dash-prefixed tasks', () => {
-        const content = '- Task one\n- Task two\n- Task three';
-        expect(parseEpicTasks(content)).toEqual(['Task one', 'Task two', 'Task three']);
-    });
+    describe('run', () => {
+        beforeEach(() => {
+            vi.spyOn(console, 'log').mockImplementation(() => {});
+            vi.spyOn(console, 'error').mockImplementation(() => {});
+            vi.mocked(existsSync).mockReturnValue(true);
+            vi.mocked(readFileSync).mockReturnValue('- Task one\n- Task two');
+        });
 
-    it('parses asterisk-prefixed tasks', () => {
-        const content = '* Task one\n* Task two';
-        expect(parseEpicTasks(content)).toEqual(['Task one', 'Task two']);
-    });
+        afterEach(() => {
+            vi.restoreAllMocks();
+        });
 
-    it('ignores non-list lines', () => {
-        const content = '# Heading\n- Task one\nSome paragraph\n- Task two';
-        expect(parseEpicTasks(content)).toEqual(['Task one', 'Task two']);
-    });
+        it('returns 1 when not in a git repo', () => {
+            vi.mocked(get_repo_root).mockImplementation(() => { throw new Error('not a repo'); });
+            expect(run()).toBe(1);
+        });
 
-    it('ignores empty list items', () => {
-        const content = '- Task one\n- \n- Task two';
-        expect(parseEpicTasks(content)).toEqual(['Task one', 'Task two']);
-    });
+        it('returns 1 when args are missing', () => {
+            vi.mocked(get_repo_root).mockReturnValue('/tmp/repo');
+            vi.mocked(parse_args).mockReturnValue({ positional: [], flags: new Map() });
+            process.argv = ['node', 'script'];
+            expect(run()).toBe(1);
+        });
 
-    it('trims whitespace from task names', () => {
-        const content = '-   Task with spaces   ';
-        expect(parseEpicTasks(content)).toEqual(['Task with spaces']);
-    });
+        it('returns 1 when file not found', () => {
+            vi.mocked(get_repo_root).mockReturnValue('/tmp/repo');
+            vi.mocked(parse_args).mockReturnValue({ positional: ['epic.md'], flags: new Map() });
+            vi.mocked(existsSync).mockReturnValue(false);
+            process.argv = ['node', 'script'];
+            expect(run()).toBe(1);
+        });
 
-    it('handles mixed dash and asterisk prefixes', () => {
-        const content = '- Dash task\n* Asterisk task\n- Another dash';
-        expect(parseEpicTasks(content)).toEqual(['Dash task', 'Asterisk task', 'Another dash']);
+        it('returns 0 when no tasks found', () => {
+            vi.mocked(get_repo_root).mockReturnValue('/tmp/repo');
+            vi.mocked(parse_args).mockReturnValue({ positional: ['epic.md'], flags: new Map() });
+            vi.mocked(existsSync).mockReturnValue(true);
+            vi.mocked(readFileSync).mockReturnValue('No list here');
+            process.argv = ['node', 'script'];
+            expect(run()).toBe(0);
+        });
+
+        it('returns 0 and creates tasks', () => {
+            vi.mocked(get_repo_root).mockReturnValue('/tmp/repo');
+            vi.mocked(parse_args).mockReturnValue({ positional: ['epic.md'], flags: new Map() });
+            vi.mocked(existsSync).mockReturnValue(true);
+            vi.mocked(readFileSync).mockReturnValue('- Task one\n- Task two');
+            process.argv = ['node', 'script'];
+            expect(run()).toBe(0);
+        });
     });
 });

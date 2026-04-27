@@ -21,7 +21,7 @@ export function parseEpicTasks(content: string): string[] {
     return tasks;
 }
 
-function run(): number {
+export function run(): number {
     let repoRoot;
     try {
         repoRoot = get_repo_root();

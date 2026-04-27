@@ -67,6 +67,7 @@ describe('inject', () => {
     });
 
     it('should throw with full chain on circular dependencies', () => {
+        // eslint-disable-next-line prefer-const -- circular dependency requires forward declaration
         let fnA: () => void;
         const fnB: () => void = inject({ a: () => fnA })((deps) => {
             deps.a()();

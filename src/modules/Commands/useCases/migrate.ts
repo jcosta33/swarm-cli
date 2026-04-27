@@ -5,7 +5,7 @@ import { spawnSync } from 'child_process';
 import { fileURLToPath } from 'url';
 import { dirname, join, basename } from 'path';
 import { red, cyan, dim, green, parse_args } from '../../Terminal/index.ts';
-import { get_repo_root } from '../../Workspace/index.ts';
+import { get_repo_root, resolve_within } from '../../Workspace/index.ts';
 
 const newCommandPath = join(dirname(fileURLToPath(import.meta.url)), 'new.ts');
 
@@ -27,7 +27,12 @@ export function run(): number {
         return 1;
     }
 
-    const fullPath = join(repoRoot, targetFile);
+    const resolved = resolve_within(repoRoot, targetFile);
+    if (!resolved.ok) {
+        console.error(red(resolved.error.message));
+        return 1;
+    }
+    const fullPath = resolved.value;
     if (!existsSync(fullPath)) {
         console.error(red(`File not found: ${targetFile}`));
         return 1;

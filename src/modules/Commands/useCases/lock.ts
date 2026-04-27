@@ -35,11 +35,11 @@ export function run(): number {
         }
 
         const result = claim_lock(repoRoot, agentSlug, files);
-        if (result.success) {
+        if (result.ok) {
             console.log(green(`Claimed ${String(files.length)} file(s) for ${agentSlug}.`));
             return 0;
         }
-        console.error(red(result.reason ?? 'Failed to claim lock.'));
+        console.error(red(result.error.message));
         return 1;
     }
 
@@ -51,11 +51,11 @@ export function run(): number {
         }
 
         const result = release_lock(repoRoot, file);
-        if (result.success) {
+        if (result.ok) {
             console.log(green(`Released lock on ${file}.`));
             return 0;
         }
-        console.error(red(result.reason ?? 'Failed to release lock.'));
+        console.error(red(result.error.message));
         return 1;
     }
 

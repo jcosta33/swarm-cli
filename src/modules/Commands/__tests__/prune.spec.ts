@@ -5,8 +5,8 @@ vi.mock('../../Workspace/index.ts', () => ({
     get_repo_root: vi.fn(() => '/tmp/repo'),
     worktree_list: vi.fn(),
     is_branch_merged_into: vi.fn(() => true),
-    worktree_remove: vi.fn(),
-    delete_branch: vi.fn(),
+    worktree_remove: vi.fn((path: string) => ({ ok: true, value: { path } })),
+    delete_branch: vi.fn((branch: string) => ({ ok: true, value: { branch } })),
     worktree_prune: vi.fn(),
 }));
 

@@ -1,7 +1,5 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
 import { run } from '../useCases/chaos.ts';
-import { mkdtempSync, writeFileSync, rmSync, readFileSync } from 'fs';
-import { join, tmpdir } from 'path';
 
 vi.mock('../../Workspace/index.ts', () => ({
     get_repo_root: vi.fn(() => '/tmp/repo'),

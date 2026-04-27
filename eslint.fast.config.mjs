@@ -1,44 +1,29 @@
-/* (c) Copyright Sourdaw Ltd., all rights reserved. */
-
 // @ts-check
+// Fast (no-type-aware) variant of eslint.config.mjs. Disables every rule that
+// requires the TypeScript program — drops linting time from minutes to ~1s
+// on this codebase.
 
-import tsPlugin from '@typescript-eslint/eslint-plugin';
+import tseslint from 'typescript-eslint';
 
 import base from './eslint.config.mjs';
 
 export default [
     ...base,
     {
-        files: ['**/*.ts', '**/*.tsx'],
-
-        // Disable type-aware linting
+        files: ['**/*.{ts,mts,cts}'],
         languageOptions: {
             parserOptions: {
-                project: null,
                 projectService: false,
+                project: null,
             },
         },
-
-        // Disable all rules that require type information
-        rules: {
-            ...Object.fromEntries(
-                Object.entries(tsPlugin.rules)
-                    .filter(([, rule]) => rule.meta?.docs?.requiresTypeChecking)
-                    .map(([name]) => [`@typescript-eslint/${name}`, 'off'])
-            ),
-
-            // Manually-disabled (no requiresTypeChecking flag)
-            '@eslint-react/no-unused-props': 'off',
-            '@eslint-react/no-unstable-context-value': 'off',
-            '@eslint-react/no-leaked-conditional-rendering': 'off',
-            '@eslint-react/no-implicit-key': 'off',
-        },
-
-        // Prevent ESLint from removing disable comments during the fast pass
-        //
-        // This config disables type-aware rules for performance. Disable directives that
-        // exist solely for those rules would be considered "unused" in this run and
-        // auto-removed by --fix, breaking the subsequent full (type-aware) lint run.
+        rules: Object.fromEntries(
+            Object.entries(tseslint.plugin.rules ?? {})
+                .filter(([, rule]) => rule.meta?.docs?.requiresTypeChecking)
+                .map(([name]) => [`@typescript-eslint/${name}`, 'off'])
+        ),
+        // Disable directives might exist for type-aware rules; don't auto-prune them
+        // in the fast pass.
         linterOptions: {
             reportUnusedDisableDirectives: 'off',
         },

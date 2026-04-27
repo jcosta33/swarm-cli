@@ -1,6 +1,6 @@
-import { registrations, resetContainerState } from './internal/containerState';
+import { registrations, resetContainerState } from './internal/containerState.ts';
 
-import type { ContainerApi, DependencyKey } from './types';
+import type { ContainerApi, DependencyKey } from './types.ts';
 
 export const Container: ContainerApi = {
     register<TValue>(token: DependencyKey<TValue>, value: TValue): void {

@@ -16,7 +16,7 @@ export function scoreContent(content: string, keywords: string[]): number {
     return score;
 }
 
-function run(): number {
+export function run(): number {
     let repoRoot;
     try {
         repoRoot = get_repo_root();
@@ -73,7 +73,7 @@ function run(): number {
     } else {
         console.log(green(`✓ Found ${String(matches.length)} highly relevant documents:`));
         matches.slice(0, 5).forEach((m) => {
-            const relativePath = m.file.replace(repoRoot + '/', '');
+            const relativePath = m.file.replace(`${repoRoot}/`, '');
             console.log(`  - ${cyan(relativePath)} ${dim(`(Relevance: ${String(m.score)})`)}`);
 
             // Extract a snippet roughly around the first keyword match

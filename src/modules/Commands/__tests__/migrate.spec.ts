@@ -10,6 +10,7 @@ vi.mock('child_process', async (importOriginal) => {
 
 vi.mock('../../Workspace/index.ts', () => ({
     get_repo_root: vi.fn(() => '/tmp/repo'),
+    resolve_within: vi.fn((root: string, path: string) => ({ ok: true, value: `${root}/${path}` })),
 }));
 
 describe('migrate', () => {

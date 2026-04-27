@@ -1,24 +1,51 @@
 {
     "compilerOptions": {
-        "target": "ES2022",
-        "lib": ["ES2024", "DOM", "DOM.Iterable"],
+        // ── Target / lib ────────────────────────────────────────────────────
+        // Node 22.6+ executes the source via `--experimental-strip-types`, so
+        // ES2024 features land at runtime without polyfills. No DOM lib —
+        // this is a CLI.
+        "target": "ES2024",
+        "lib": ["ES2024"],
         "types": ["node"],
+
+        // ── Module system ───────────────────────────────────────────────────
+        // NodeNext mirrors Node's own resolver: explicit ".ts" extensions on
+        // relative imports, no path-mapping at runtime. The "#/*" alias still
+        // resolves at typecheck time for the infra package, but every runtime
+        // import must spell out the file extension.
         "module": "NodeNext",
         "moduleResolution": "NodeNext",
+        "allowImportingTsExtensions": true,
+        "esModuleInterop": true,
+        "resolveJsonModule": true,
+
+        // ── Strictness ──────────────────────────────────────────────────────
         "strict": true,
+        "noFallthroughCasesInSwitch": true,
+        "forceConsistentCasingInFileNames": true,
+        // Soft-off to keep the working tree green during the infra migration;
+        // re-enable once unused imports/vars in legacy useCases are cleaned.
         "noUnusedLocals": false,
         "noUnusedParameters": false,
-        "noFallthroughCasesInSwitch": true,
-        "noUncheckedIndexedAccess": false,
+        // exactOptionalPropertyTypes is intentionally off — it is a noisy
+        // upgrade and is not blocking anything functional.
         "exactOptionalPropertyTypes": false,
-        "forceConsistentCasingInFileNames": true,
-        "resolveJsonModule": true,
+        // noUncheckedIndexedAccess off because parse_args / process.argv work
+        // with `string | undefined` already and every consumer explicitly
+        // narrows. Flipping it would be a significant rewrite for no real
+        // soundness gain in this codebase.
+        "noUncheckedIndexedAccess": false,
+
+        // ── Compiler hygiene ────────────────────────────────────────────────
         "isolatedModules": true,
-        "esModuleInterop": true,
-        "allowImportingTsExtensions": true,
         "noEmit": true,
-        "jsx": "react-jsx",
         "skipLibCheck": true,
+        "useDefineForClassFields": true,
+
+        // ── Path aliases ────────────────────────────────────────────────────
+        // Only used by the new src/infra/* package. Module code uses relative
+        // imports (../../Module/index.ts) per AGENTS.md. With TypeScript 6+
+        // `paths` resolves relative to this config — no `baseUrl` needed.
         "paths": {
             "#/*": ["./src/*"]
         }
@@ -28,16 +55,10 @@
         "dist",
         "build",
         "coverage",
-        "storybook-static",
         "node_modules",
-        "src/**/*.spec.ts",
-        "src/**/*.spec.tsx",
-        "src/**/*.test.ts",
-        "src/**/*.test.tsx",
-        "src/infra/store/storage/createAutomergeStorage.ts",
-        "src/infra/store/storage/createLocalStorage.ts",
-        "src/infra/store/storage/LocalStorageKeys.ts",
-        "src/infra/store/useStore.ts",
-        "src/infra/store/useStoreSelector.ts"
+        "**/*.spec.ts",
+        "**/*.spec.tsx",
+        "**/*.test.ts",
+        "**/*.test.tsx"
     ]
 }

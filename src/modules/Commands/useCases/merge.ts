@@ -4,11 +4,11 @@ import { parse_args, red, green, dim } from '../../Terminal/index.ts';
 import { get_repo_root } from '../../Workspace/index.ts';
 import { spawnSync } from 'child_process';
 
-interface MergeResult {
+type MergeResult = {
     success: boolean;
     branch: string;
     conflicts?: string[];
-}
+};
 
 function merge_branch(repoRoot: string, branch: string): MergeResult {
     const result = spawnSync('git', ['merge', '--no-ff', '--no-commit', branch], {

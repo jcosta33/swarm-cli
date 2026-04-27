@@ -24,7 +24,7 @@ export function findFiles(dir: string): string[] {
     return results;
 }
 
-function run(): number {
+export function run(): number {
     let repoRoot;
     try {
         repoRoot = get_repo_root();
@@ -76,7 +76,7 @@ function run(): number {
         const taskSlug = `${epicSlug}-chunk-${String(index + 1)}`;
         const taskPath = join(tasksDir, `${taskSlug}.md`);
         
-        const relativeFiles = chunk.map(f => f.replace(repoRoot + '/', ''));
+        const relativeFiles = chunk.map(f => f.replace(`${repoRoot}/`, ''));
         
         const template = `# Refactor Chunk ${String(index + 1)}
 

@@ -1,10 +1,10 @@
-interface Capability {
+type Capability = {
     name: string;
     version: string;
     type: 'command' | 'adapter' | 'skill';
     description: string;
     entry_point: string;
-}
+};
 
 const registry = new Map<string, Capability>();
 

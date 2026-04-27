@@ -2,7 +2,7 @@
 
 import { spawnSync } from 'child_process';
 import { red, cyan, bold, dim, parse_args } from '../../Terminal/index.ts';
-import { get_repo_root } from '../../Workspace/index.ts';
+import { get_repo_root, resolve_within } from '../../Workspace/index.ts';
 
 export function run(): number {
     let repoRoot;
@@ -22,9 +22,16 @@ export function run(): number {
         return 1;
     }
 
+    const pathCheck = resolve_within(repoRoot, pathFilter);
+    if (!pathCheck.ok) {
+        console.error(red(pathCheck.error.message));
+        return 1;
+    }
+
     console.log(cyan(`\nScanning for references to ${bold(symbol)} in ${bold(pathFilter)}...\n`));
 
-    // Use git grep for lightning fast indexed search
+    // Use git grep for lightning fast indexed search.
+    // Pass the original (relative) pathFilter — git interprets it relative to cwd.
     const res = spawnSync('git', ['grep', '-n', symbol, '--', pathFilter], { cwd: repoRoot, encoding: 'utf8' });
 
     if (res.status !== 0 || !res.stdout) {

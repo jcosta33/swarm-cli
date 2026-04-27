@@ -54,6 +54,7 @@ export function print_help(): void {
     knowledge <query>                Search past tasks, audits, specs, and PRs
     logs [--agent a] [--slug s]      Query / tail / prune the telemetry SQLite DB
         [--follow] [--prune <days>]
+        [--events]                   Tail the NDJSON event log instead of sessions
     telemetry                        Aggregated session metrics dashboard
 
   Multi-agent orchestration:

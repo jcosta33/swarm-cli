@@ -22,7 +22,7 @@ export function writeMemory(repoRoot: string, topic: string, content: string) {
     
     let existing = '';
     if (existsSync(file)) {
-        existing = readFileSync(file, 'utf8') + '\n\n';
+        existing = `${readFileSync(file, 'utf8')}\n\n`;
     }
     
     const stamped = `## Entry (${new Date().toISOString()})\n${content}\n`;

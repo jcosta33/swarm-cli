@@ -1,4 +1,4 @@
-import { type StorageAdapter } from './types';
+import { type StorageAdapter } from './types.ts';
 
 export const createMemoryStorage = <TData>(): StorageAdapter<TData> => {
     let value: TData | null = null;

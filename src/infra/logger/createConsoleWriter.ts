@@ -1,4 +1,4 @@
-import { type LogWriter } from './types';
+import { type LogWriter } from './types.ts';
 
 export const createConsoleWriter = (): LogWriter => {
     const write = (severity: 'debug' | 'info' | 'warn' | 'error', ...args: unknown[]): void => {

@@ -1,4 +1,4 @@
-import type { AppError } from './createAppError';
+import type { AppError } from './createAppError.ts';
 
 export const isAppError = (value: unknown): value is AppError => {
     return (

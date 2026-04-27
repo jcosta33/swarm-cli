@@ -122,6 +122,16 @@ Prohibited tools and techniques include, but are not limited to:
 - **Repositories Touch Metal:** All I/O (Node IPC, Storage, Web Audio) goes in `repositories/`. Use cases orchestrate repositories.
 - **Engine Rules:** The audio engine (`engine/`) CANNOT import repositories directly (`repositories-only-from-usecases`). Inject dependencies or resolve them via the use case layer.
 
+## 🚌 Cross-cutting infrastructure (`src/infra/*`)
+
+`src/infra/` holds primitives that are not owned by any single module. The `infra-isolation` rule in `.dependency-cruiser.cjs` forbids `src/infra/**` from importing `src/modules/**` — infra is leaf-level by construction.
+
+- **Event bus (`src/infra/events/swarmBus.ts`):** Per-process typed `EventBus<SwarmEvents>`. Use cases **emit** lifecycle events (`agent.session.recorded`, `sandbox.created`, `sandbox.removed`, …); subscribers register exactly once at boot in `src/index.ts`. Never call `swarmBus.on(...)` from inside a useCase. Sync handlers run inline before `emit()` resolves, so `void emit(...)` is safe from synchronous flows.
+- **Tagged errors + `Result<V, E>` (`src/infra/errors/`):** For I/O boundaries where the caller would otherwise discriminate on `error.message`, return `Result<TValue, AppError<'Tag', { …structuredFields }>>` instead of throwing. Use `ok(value)` / `err(createAppError('Tag', message, fields))`. Discriminate at the CLI boundary (`Commands/useCases/<cmd>.ts`) — never propagate a `Result<>` through multiple layers. Keep `throw` for genuinely unrecoverable failures (`get_repo_root()` outside a git tree, etc.).
+- **DI container (`src/infra/di/`) is available but reserved for true singletons** (logger, event bus, clock, telemetry DB). Pure helpers and use cases stay as plain imports — direct `vi.mock` covers their test needs.
+
+Full pattern reference and anti-patterns: load `.agents/skills/event-bus-and-results/SKILL.md` before adding events or migrating an I/O boundary.
+
 ## 🦀 Backend Node Node Architecture
 
 - **5 Crate Workspace:** Features 5 crates: `daw-core` (zero-dependency types/newtypes), `daw-engine` (RT Audio, CPAL), `daw-dsp` (Pure Math), `daw-io` (Node-free I/O), and `src-tauri` (Thin bridge).

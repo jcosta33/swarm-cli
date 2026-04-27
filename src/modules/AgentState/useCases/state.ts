@@ -3,7 +3,7 @@ import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from '
 import { join } from 'path';
 import { lockSync, unlockSync } from 'proper-lockfile';
 
-interface AgentState {
+type AgentState = {
     status?: string;
     pid?: number;
     backend?: string;
@@ -11,7 +11,7 @@ interface AgentState {
     lastUpdated?: string;
     exitCode?: number | null;
     error?: string | null;
-}
+};
 
 export function is_agent_state(value: unknown): value is AgentState {
     if (typeof value !== 'object' || value === null) {

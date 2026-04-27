@@ -1,9 +1,8 @@
 #!/usr/bin/env node
 
 import { readFileSync, existsSync } from 'fs';
-import { join } from 'path';
 import { red, cyan, bold, dim, yellow, parse_args } from '../../Terminal/index.ts';
-import { get_repo_root } from '../../Workspace/index.ts';
+import { get_repo_root, resolve_within } from '../../Workspace/index.ts';
 
 export function extractImports(content: string) {
     const lines = content.split('\n');
@@ -23,7 +22,7 @@ export function extractImports(content: string) {
     return [...new Set(dependencies)]; // unique
 }
 
-function run(): number {
+export function run(): number {
     let repoRoot;
     try {
         repoRoot = get_repo_root();
@@ -40,7 +39,12 @@ function run(): number {
         return 1;
     }
 
-    const fullPath = join(repoRoot, targetFile);
+    const resolved = resolve_within(repoRoot, targetFile);
+    if (!resolved.ok) {
+        console.error(red(resolved.error.message));
+        return 1;
+    }
+    const fullPath = resolved.value;
     if (!existsSync(fullPath)) {
         console.error(red(`File not found: ${targetFile}`));
         return 1;

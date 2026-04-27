@@ -1,8 +1,8 @@
-interface TaskNode {
+type TaskNode = {
     id: string;
     description: string;
     dependencies: string[];
-}
+};
 
 export function validate_dag(tasks: TaskNode[]): { valid: boolean; cycle?: string[] } {
     const graph = new Map<string, Set<string>>();

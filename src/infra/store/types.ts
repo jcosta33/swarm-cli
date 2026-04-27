@@ -1,6 +1,6 @@
-import { type Logger } from '#/infra/logger/types';
+import { type Logger } from '../logger/types.ts';
 
-import { type StorageAdapter } from './storage/types';
+import { type StorageAdapter } from './storage/types.ts';
 
 export type StoreOptions<TData> = {
     storage?: StorageAdapter<TData>;

@@ -12,7 +12,7 @@ vi.mock('../../AgentState/index.ts', () => ({
     is_process_running: vi.fn(() => false),
 }));
 
-import { worktree_list, list_branches_by_prefix } from '../../Workspace/index.ts';
+import { get_repo_root, worktree_list, list_branches_by_prefix } from '../../Workspace/index.ts';
 
 describe('list', () => {
     beforeEach(() => {
@@ -42,5 +42,10 @@ describe('list', () => {
         vi.mocked(worktree_list).mockReturnValue([]);
         vi.mocked(list_branches_by_prefix).mockReturnValue(['agent/orphan']);
         expect(run()).toBe(0);
+    });
+
+    it('returns 1 when not in a git repo', () => {
+        vi.mocked(get_repo_root).mockImplementation(() => { throw new Error('not a repo'); });
+        expect(run()).toBe(1);
     });
 });

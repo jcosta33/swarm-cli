@@ -1,17 +1,17 @@
 import { AsyncLocalStorage } from 'async_hooks';
 
-interface LogContext {
+type LogContext = {
     trace_id?: string;
     slug?: string;
-}
+};
 
-interface LogEntry {
+type LogEntry = {
     level: string;
     msg: string;
     timestamp: string;
     trace_id?: string;
     slug?: string;
-}
+};
 
 const asyncStorage = new AsyncLocalStorage<LogContext>();
 
