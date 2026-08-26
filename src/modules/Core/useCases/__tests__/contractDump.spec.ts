@@ -23,7 +23,7 @@ describe('contract_dump — the `--contract` projection', () => {
 
     it('projects the current contract without reusing retired IDs', () => {
         const dump = contract_dump();
-        expect(dump.version).toBe('0.26.0');
+        expect(dump.version).toBe('0.27.0');
         expect(dump.checks.map((check) => check.id)).not.toContain('C005');
         expect(dump.checks.map((check) => check.id)).not.toContain('C006');
         expect(dump.checks.map((check) => check.id)).not.toContain('C012');

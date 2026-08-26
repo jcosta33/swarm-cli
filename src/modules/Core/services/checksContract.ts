@@ -14,7 +14,7 @@ import type { OutcomeLevel } from '../useCases/unixOutcome.ts';
 import { scan_markdown, strip_inline_code, visible_text } from '../../../infra/markdownScan.ts';
 
 // Pinned to suspec/checks/checks.yaml `version:`; the drift-guard test fails if the sibling diverges.
-export const CONTRACT_VERSION = '0.26.0';
+export const CONTRACT_VERSION = '0.27.0';
 
 export type CheckSeverity = 'hard-error' | 'warning';
 

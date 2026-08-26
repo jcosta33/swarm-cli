@@ -57,16 +57,7 @@ const nodeFileSystem: CheckFileSystem = {
     read: (path) => readFileSync(path, 'utf8'),
 };
 
-const RECOGNIZED_TYPES = new Set([
-    'spec',
-    'task',
-    'inventory',
-    'change-plan',
-    'audit',
-    'research',
-    'campaign',
-    'panel',
-]);
+const RECOGNIZED_TYPES = new Set(['spec', 'task', 'inventory', 'change-plan', 'audit', 'research', 'campaign']);
 
 export const CHECK_FLAG_SPEC = {
     booleans: ['--json', '--contract'],

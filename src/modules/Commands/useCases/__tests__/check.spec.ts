@@ -467,7 +467,7 @@ describe('check command — spec checking (frontmatter-sniffed)', () => {
         expect(err).toContain('must declare `type:` as a scalar');
     });
 
-    it.each(['inventory', 'audit', 'research', 'panel'])(
+    it.each(['inventory', 'audit', 'research'])(
         'a type: %s file gets a clean "no checks for type" note (exit 0), never spec checker errors',
         (artifactType) => {
             const file = write(`a-${artifactType}.md`, `---\ntype: ${artifactType}\nid: X-001\n---\n\n# body\n`);

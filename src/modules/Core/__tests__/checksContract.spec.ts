@@ -595,7 +595,7 @@ describe('drift guard against the sibling suspec/checks/checks.yaml', () => {
         expect([...canonIds].sort()).toEqual(CORE_CHECKS.map((c) => c.id).sort());
         for (const contractLine of [
             'checked: [spec, task, change-plan, campaign]',
-            'recognized_unchecked: [inventory, audit, research, panel]',
+            'recognized_unchecked: [inventory, audit, research]',
             'missing_type: hard-error',
             'unknown_type: hard-error',
             'status_enum: [draft, ready]',
