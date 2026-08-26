@@ -34,6 +34,8 @@ function fixture() {
     mkdirSync(join(home, '.claude'));
     mkdirSync(join(home, '.kimi-code'));
     mkdirSync(join(home, '.zcode'));
+    mkdirSync(join(home, '.cursor'));
+    mkdirSync(join(home, '.gemini'));
     mkdirSync(join(home, '.config', 'opencode'), { recursive: true });
     const stdout: string[] = [];
     const stderr: string[] = [];
@@ -72,7 +74,12 @@ describe('setup', () => {
         const f = fixture();
         try {
             expect(run(['codex'], f.context)).toBe(1);
-            expect(run(['codex', 'claude-code', 'kimi-code', 'zcode', 'opencode', '--dry-run'], f.context)).toBe(0);
+            expect(
+                run(
+                    ['codex', 'claude-code', 'kimi-code', 'zcode', 'opencode', 'cursor', 'antigravity', '--dry-run'],
+                    f.context
+                )
+            ).toBe(0);
             expect(() => lstatSync(join(f.home, '.agents'))).toThrow();
             expect(() => readFileSync(join(f.home, '.codex', 'AGENTS.md'))).toThrow();
         } finally {
@@ -83,7 +90,7 @@ describe('setup', () => {
     it('installs, checks, and removes all harnesses in input order', () => {
         const f = fixture();
         try {
-            const harnesses = ['claude-code', 'codex', 'kimi-code', 'zcode', 'opencode'];
+            const harnesses = ['claude-code', 'codex', 'kimi-code', 'zcode', 'opencode', 'cursor', 'antigravity'];
             expect(run([...harnesses, '--yes'], f.context)).toBe(0);
             expect(() => lstatSync(join(f.home, '.agents'))).toThrow();
             for (const path of [
@@ -92,6 +99,8 @@ describe('setup', () => {
                 join(f.home, '.kimi-code', 'AGENTS.md'),
                 join(f.home, '.zcode', 'AGENTS.md'),
                 join(f.home, '.config', 'opencode', 'AGENTS.md'),
+                join(f.home, '.cursor', 'rules', 'AGENTS.md'),
+                join(f.home, '.gemini', 'GEMINI.md'),
             ]) {
                 const installed = readFileSync(path, 'utf8');
                 expect(installed).toContain(AGENT_POLICY.trimEnd());
@@ -371,6 +380,22 @@ describe('setup', () => {
                 process.stdout.write = previousStdout;
             }
             expect(JSON.parse(json)).toMatchObject({ ok: false, operation: 'install' });
+        } finally {
+            f.cleanup();
+        }
+    });
+
+    it('creates Cursor rules directory and rejects a file in its place', () => {
+        const f = fixture();
+        try {
+            expect(run(['cursor', '--yes'], f.context)).toBe(0);
+            expect(readFileSync(join(f.home, '.cursor', 'rules', 'AGENTS.md'), 'utf8')).toContain(
+                AGENT_POLICY.trimEnd()
+            );
+            expect(run(['cursor', '--remove', '--yes'], f.context)).toBe(0);
+            rmSync(join(f.home, '.cursor', 'rules'), { recursive: true, force: true });
+            writeFileSync(join(f.home, '.cursor', 'rules'), 'not-a-directory');
+            expect(run(['cursor', '--check'], f.context)).toBe(2);
         } finally {
             f.cleanup();
         }

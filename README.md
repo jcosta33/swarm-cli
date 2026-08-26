@@ -33,9 +33,9 @@ companion.
 Install the global agent policy only after reviewing the preview:
 
 ```bash
-suspec setup codex claude-code kimi-code zcode opencode
-suspec setup codex claude-code kimi-code zcode opencode --yes
-suspec setup codex claude-code kimi-code zcode opencode --check
+suspec setup codex claude-code kimi-code zcode opencode cursor antigravity
+suspec setup codex claude-code kimi-code zcode opencode cursor antigravity --yes
+suspec setup codex claude-code kimi-code zcode opencode cursor antigravity --check
 ```
 
 `setup` accepts only explicit harness names. It resolves each harness's normal native global

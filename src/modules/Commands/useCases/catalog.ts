@@ -25,9 +25,9 @@ export const COMMAND_CATALOG = [
         name: 'setup',
         description: 'Install, inspect, or remove the user-level agent policy',
         usage: [
-            'suspec setup <codex|claude-code|kimi-code|zcode|opencode>... [--dry-run] [--yes]',
-            'suspec setup <codex|claude-code|kimi-code|zcode|opencode>... --check',
-            'suspec setup <codex|claude-code|kimi-code|zcode|opencode>... --remove [--yes]',
+            'suspec setup <codex|claude-code|kimi-code|zcode|opencode|cursor|antigravity>... [--dry-run] [--yes]',
+            'suspec setup <codex|claude-code|kimi-code|zcode|opencode|cursor|antigravity>... --check',
+            'suspec setup <codex|claude-code|kimi-code|zcode|opencode|cursor|antigravity>... --remove [--yes]',
             '  --dry-run                preview installation without writing',
             '  --check                  inspect installation without writing',
             '  --remove                 preview removal; --yes applies it',

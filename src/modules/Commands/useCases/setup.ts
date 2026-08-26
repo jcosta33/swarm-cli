@@ -5,6 +5,7 @@ import {
     existsSync,
     fsyncSync,
     lstatSync,
+    mkdirSync,
     openSync,
     readFileSync,
     readdirSync,
@@ -30,7 +31,7 @@ export const SETUP_FLAG_SPEC = {
     strings: [],
 } as const;
 
-const HARNESSES = ['codex', 'claude-code', 'kimi-code', 'zcode', 'opencode'] as const;
+const HARNESSES = ['codex', 'claude-code', 'kimi-code', 'zcode', 'opencode', 'cursor', 'antigravity'] as const;
 type Harness = (typeof HARNESSES)[number];
 type State = 'current' | 'changed' | 'missing' | 'drifted' | 'blocked' | 'unknown';
 type Operation = 'check' | 'install' | 'remove' | 'dry-run';
@@ -295,6 +296,21 @@ function resolve_target(
         const root = require_directory(home, join(home, '.zcode'), 'ZCode config directory');
         return { harness, path: join(root, 'AGENTS.md'), body: AGENT_POLICY.replace(/\n$/, '') };
     }
+    if (harness === 'cursor') {
+        const root = require_directory(home, join(home, '.cursor'), 'Cursor config directory');
+        const rules = join(root, 'rules');
+        if (existsSync(rules)) require_directory(home, rules, 'Cursor rules directory');
+        return { harness, path: join(rules, 'AGENTS.md'), body: AGENT_POLICY.replace(/\n$/, '') };
+    }
+    if (harness === 'antigravity') {
+        const root = require_directory(home, join(home, '.gemini'), 'Gemini config directory');
+        return {
+            harness,
+            path: join(root, 'GEMINI.md'),
+            body: AGENT_POLICY.replace(/\n$/, ''),
+            note: 'Gemini CLI shares this file',
+        };
+    }
     for (const name of ['OPENCODE_CONFIG_DIR', 'XDG_CONFIG_HOME', 'OPENCODE_CONFIG', 'OPENCODE_CONFIG_CONTENT']) {
         if (env[name] !== undefined) throw new SetupFailure(`${name} is unsupported; OpenCode target is ambiguous`);
     }
@@ -395,6 +411,18 @@ function expected_target(
     const originalExisted = owned?.originalExisted ?? existed;
     const expected = attach_fragment(original, body, originalExisted);
     return { current: same_with_terminal_newline_normalized(source, expected), expected, original, originalExisted };
+}
+
+function ensure_parent(path: string, home: string): void {
+    const parent = dirname(path);
+    if (existsSync(parent)) {
+        require_directory(home, parent, 'target directory');
+        return;
+    }
+    const ancestor = dirname(parent);
+    if (!existsSync(ancestor)) throw new SetupFailure(`target directory does not exist: ${parent}`);
+    require_directory(home, ancestor, 'target parent directory');
+    mkdirSync(parent, { mode: 0o700 });
 }
 
 function atomic_write(path: string, content: string, uid: number | undefined, expected: FileSnapshot): void {
@@ -510,6 +538,7 @@ function execute(
                         message: 'install preview; rerun with --yes',
                     });
                 } else {
+                    ensure_parent(target.path, home);
                     atomic_write(target.path, assessed.expected, context.uid, snapshot);
                     targets.push({
                         harness,
